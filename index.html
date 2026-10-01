@@ -2,6 +2,11 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
+<script>
+/* KONFIGURASI: isi dengan URL web app Apps Script (berakhiran /exec) agar fitur Catat & Analisa AI aktif.
+   Kosong = mode baca-saja memakai data.json. Lihat backend/SETUP-id.md. */
+var BACKEND_URL = '';
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Jurnal Seduh Kopi</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,8 +44,8 @@ h3{font-family:var(--display);font-size:18px;font-weight:700;margin:0 0 10px;col
 .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px}
 .filters label{font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.08em}
 input,select,button{font:inherit}
-input[type=text],input[type=search],input[type=date],input[type=number],select{width:100%;padding:9px 14px;border:1.5px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);min-height:42px;transition:border-color .15s,box-shadow .15s}
-input:focus,select:focus{outline:0;border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,175,241,.2)}
+input[type=text],input[type=search],input[type=date],input[type=number],input[type=password],textarea,select{width:100%;padding:9px 14px;border:1.5px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);min-height:42px;transition:border-color .15s,box-shadow .15s}
+input:focus,select:focus,textarea:focus{outline:0;border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,175,241,.2)}
 button,.btn{background:var(--brown);color:#fff;border:0;border-radius:999px;padding:9px 20px;cursor:pointer;font-family:var(--display);font-weight:700;letter-spacing:-.01em;min-height:42px;text-decoration:none;display:inline-block;transition:background .15s,transform .05s}
 button:hover,.btn:hover{background:#305de0}
 button:active,.btn:active{transform:translateY(1px)}
@@ -95,6 +100,32 @@ table.cmp td.base{color:var(--muted)}
 .crumbs a{color:var(--brown)}
 a{color:var(--accent)}
 .beanrow{display:flex;gap:12px;align-items:center;justify-content:space-between}
+
+textarea{border-radius:var(--r-sm);min-height:120px;resize:vertical;line-height:1.5;display:block}
+button.sm,.btn.sm{padding:5px 14px;min-height:34px;font-size:13px}
+button.ai{background:var(--blue-d)} button.ai:hover{background:#005a87}
+button.ai.ghost{background:transparent;color:var(--blue-d);border:1.5px solid var(--blue-d)} button.ai.ghost:hover{background:var(--cream)}
+.brewbox{display:grid;gap:6px}
+.brewact{display:flex;justify-content:flex-end}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.field label{font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.08em}
+.field.wide{grid-column:1/-1}
+.field.ai input,.field.ai select,.field.ai textarea{background:#f3fbff;border-color:var(--blue)}
+.field .hint{font-size:11.5px;color:var(--muted);margin-top:3px}
+.check{display:flex;gap:8px;align-items:center;font-size:13.5px;margin-top:8px}
+.check input{width:18px;height:18px;accent-color:var(--blue)}
+.ok{background:#e3f8f0;border:1px solid #8fdcc2;color:#0d5a43;border-radius:var(--r-sm);padding:12px 14px;margin-bottom:12px}
+.setup{background:#fffaeb;border:1px dashed #ffb520;border-radius:var(--r);padding:16px;margin-bottom:16px}
+.setup code{background:#fff;border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:13px}
+fieldset{border:0;padding:0;margin:0}
+fieldset:disabled{opacity:.55}
+.ovl{position:fixed;inset:0;background:rgba(25,32,37,.45);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:#fff;width:100%;max-width:760px;max-height:92vh;overflow:auto;border-radius:var(--r) var(--r) 0 0;padding:18px;box-shadow:0 -8px 30px rgba(25,32,37,.25)}
+@media(min-width:760px){.ovl{align-items:center;padding:20px}.sheet{border-radius:var(--r)}}
+.aires h4{font-family:var(--display);font-size:16px;margin:16px 0 4px;letter-spacing:-.02em;color:var(--blue-d)}
+.aires p{margin:6px 0}.aires ul,.aires ol{margin:6px 0;padding-left:22px}.aires li{margin:3px 0}
+.aires{overflow-wrap:anywhere}
+.aiq{display:flex;gap:8px;margin:10px 0}.aiq input{flex:1}
 @media(min-width:760px){
   header.top{grid-template-columns:auto 1fr;grid-template-areas:"t n" "s n";align-items:center;padding:12px 28px}
   header.top h1{grid-area:t}
@@ -122,8 +153,10 @@ a{color:var(--accent)}
     <a href="#/seduhan" data-r="seduhan">Seduhan</a>
     <a href="#/biji" data-r="biji">Biji</a>
     <a href="#/grafik" data-r="grafik">Grafik</a>
+    <a href="#/catat" data-r="catat">Catat</a>
   </nav>
 </header>
+<div id="notice" style="max-width:1100px;margin:0 auto;padding:0 14px"></div>
 <main id="app"><div class="loading"><div class="spinner"></div>Memuat data dari Google Sheet&hellip;</div></main>
 
 <!-- ===================== LOGIKA MURNI (dapat diuji di Node) ===================== -->
@@ -467,13 +500,88 @@ function scoreSeries(brews, idx, beanFilter) {
   };
 }
 
+/** Definisi form Catat (col = header kolom Sheet). */
+var FORM_BIJI = [
+  { col: 'Nama Biji / Lot', label: 'Nama biji / lot', type: 'text', wide: true, req: true },
+  { col: 'Roastery', label: 'Roastery', type: 'text' },
+  { col: 'Negara', label: 'Negara', type: 'text' },
+  { col: 'Region / Terroir', label: 'Region / terroir', type: 'text' },
+  { col: 'Farm / Produsen', label: 'Farm / produsen', type: 'text' },
+  { col: 'Ketinggian (mdpl)', label: 'Ketinggian (mdpl)', type: 'num' },
+  { col: 'Spesies', label: 'Spesies', type: 'text' },
+  { col: 'Varietas', label: 'Varietas', type: 'text' },
+  { col: 'Proses Pasca Panen', label: 'Proses pasca panen', type: 'text' },
+  { col: 'Profil Roasting', label: 'Profil roasting', type: 'text' },
+  { col: 'Tanggal Roasting', label: 'Tanggal roasting', type: 'date' },
+  { col: 'Tanggal Beli', label: 'Tanggal beli', type: 'date' },
+  { col: 'Berat (g)', label: 'Berat (g)', type: 'num' },
+  { col: 'Harga', label: 'Harga (Rp)', type: 'num' },
+  { col: 'Catatan Roastery (flavor notes)', label: 'Catatan roastery (flavor notes)', type: 'area', wide: true },
+  { col: 'Catatan Pribadi', label: 'Catatan pribadi (biji)', type: 'area', wide: true }
+];
+var FORM_SEDUH = [
+  { section: 'Waktu & alat' },
+  { col: 'Tanggal Seduh', label: 'Tanggal seduh', type: 'date', req: true },
+  { col: 'Dripper', label: 'Dripper', type: 'text' },
+  { col: 'Kertas Filter', label: 'Kertas filter', type: 'text' },
+  { col: 'Merek Air', label: 'Merek air', type: 'text' },
+  { col: 'Grinder', label: 'Grinder', type: 'text' },
+  { col: 'Setting Grind', label: 'Setting grind', type: 'text', ph: 'mis. 24 klik' },
+  { section: 'Resep' },
+  { col: 'Suhu Air (C)', label: 'Suhu air (°C)', type: 'num' },
+  { col: 'Dosis Kopi (g)', label: 'Dosis kopi (g)', type: 'num' },
+  { col: 'Air Total (g)', label: 'Air total (g)', type: 'num' },
+  { col: 'Rasio', label: 'Rasio', type: 'text', ph: 'otomatis dari dosis & air', hint: 'Kosongkan agar dihitung otomatis.' },
+  { col: 'Total Brew Time', label: 'Total brew time', type: 'text', ph: 'mis. 2:45' },
+  { col: 'Pouring Interval (detik per langkah)', label: 'Pouring interval (detik per langkah)', type: 'text', wide: true, ph: 'mis. 45s bloom, 40s, 40s' },
+  { section: 'Penilaian (1-5)' },
+  { col: 'Aroma (1-5)', label: 'Aroma', type: 'num', min: 1, max: 5, step: 0.5 },
+  { col: 'Flavor (1-5)', label: 'Flavor', type: 'num', min: 1, max: 5, step: 0.5 },
+  { col: 'Aftertaste (1-5)', label: 'Aftertaste', type: 'num', min: 1, max: 5, step: 0.5 },
+  { col: 'Acidity (1-5)', label: 'Acidity', type: 'num', min: 1, max: 5, step: 0.5 },
+  { col: 'Sweetness (1-5)', label: 'Sweetness', type: 'num', min: 1, max: 5, step: 0.5 },
+  { col: 'Body (1-5)', label: 'Body', type: 'num', min: 1, max: 5, step: 0.5 },
+  { col: 'Balance (1-5)', label: 'Balance', type: 'num', min: 1, max: 5, step: 0.5 },
+  { col: 'Skor Keseluruhan (1-10)', label: 'Skor keseluruhan (1-10)', type: 'num', min: 1, max: 10, step: 0.5 },
+  { section: 'Catatan' },
+  { col: 'Deskriptor Rasa / Notes', label: 'Deskriptor rasa / notes', type: 'area', wide: true },
+  { col: 'Catatan Pribadi', label: 'Catatan pribadi (seduhan)', type: 'area', wide: true },
+  { col: 'Tweak Berikutnya', label: 'Tweak berikutnya', type: 'area', wide: true }
+];
+
+/** Markdown sederhana (judul ##, daftar, **tebal**, _miring_) -> HTML aman. */
+function miniMarkdown(text) {
+  var lines = String(text === null || text === undefined ? '' : text).replace(/\r/g, '').split('\n');
+  var out = [], list = null;
+  function inline(t) {
+    return esc(t).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/(^|[\s(])_([^_]+)_(?=[\s).,;:!?]|$)/g, '$1<em>$2</em>');
+  }
+  function close() { if (list) { out.push('</' + list + '>'); list = null; } }
+  lines.forEach(function (ln) {
+    var m;
+    if ((m = /^\s*#{1,6}\s+(.*)$/.exec(ln))) { close(); out.push('<h4>' + inline(m[1]) + '</h4>'); }
+    else if ((m = /^\s*[-*•]\s+(.*)$/.exec(ln))) { if (list !== 'ul') { close(); out.push('<ul>'); list = 'ul'; } out.push('<li>' + inline(m[1]) + '</li>'); }
+    else if ((m = /^\s*\d+[.)]\s+(.*)$/.exec(ln))) { if (list !== 'ol') { close(); out.push('<ol>'); list = 'ol'; } out.push('<li>' + inline(m[1]) + '</li>'); }
+    else if (/^\s*$/.test(ln)) { close(); }
+    else { close(); out.push('<p>' + inline(ln) + '</p>'); }
+  });
+  close();
+  return out.join('');
+}
+
+/** Gabungkan alamat backend dengan query. */
+function backendUrl(base, query) {
+  return base + (base.indexOf('?') === -1 ? '?' : '&') + query;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     FIELD: FIELD, SCA: SCA, esc: esc, parseDay: parseDay, daysBetween: daysBetween, fmtDate: fmtDate,
     fmtNum: fmtNum, fmtRupiah: fmtRupiah, avg: avg, summarize: summarize, filterBrews: filterBrews,
     buildCompare: buildCompare, beanStats: beanStats, ageText: ageText, radarDatasets: radarDatasets,
     scoreSeries: scoreSeries, sortBrews: sortBrews, indexBiji: indexBiji, uniqueValues: uniqueValues,
-    brewLabel: brewLabel, scoreClass: scoreClass
+    brewLabel: brewLabel, scoreClass: scoreClass, miniMarkdown: miniMarkdown, backendUrl: backendUrl,
+    FORM_BIJI: FORM_BIJI, FORM_SEDUH: FORM_SEDUH
   };
 }
 </script>
@@ -492,6 +600,16 @@ if (typeof module !== 'undefined' && module.exports) {
     compareSel: {}  // per biji: array of row keys terpilih
   };
   var charts = {};
+  var PIN_KEY = 'jk_pin';
+  var pinStore = {
+    get: function () { try { return localStorage.getItem(PIN_KEY) || ''; } catch (e) { return ''; } },
+    set: function (v) { try { localStorage.setItem(PIN_KEY, v); } catch (e) {} },
+    clear: function () { try { localStorage.removeItem(PIN_KEY); } catch (e) {} }
+  };
+  function backendOn() { return typeof BACKEND_URL === 'string' && BACKEND_URL.trim() !== ''; }
+  var SETUP_HINT = 'Backend belum dipasang. Ikuti backend/SETUP-id.md lalu isi BACKEND_URL di index.html.';
+  function knownPin() { return state.pin || pinStore.get() || ''; }
+  function setNotice(html) { var n = document.getElementById('notice'); if (n) n.innerHTML = html || ''; }
 
   function brewKey(s) { return String(!isBlank(s[S.id]) ? s[S.id] : 'r' + s._row); }
   function $(sel, root) { return (root || document).querySelector(sel); }
@@ -539,7 +657,7 @@ if (typeof module !== 'undefined' && module.exports) {
     if (!isBlank(s[S.waktu])) chips.push('⏱ ' + s[S.waktu]);
     if (isNum(s[S.hari])) chips.push('H+' + s[S.hari]);
     var href = bean ? '#/biji/' + encodeURIComponent(s[S.biji]) : '#/seduhan';
-    return '<a class="brew" href="' + href + '"><div class="h"><div><div class="t">' + esc(beanLabel(bean, s[S.biji])) + '</div>' +
+    var card = '<a class="brew" href="' + href + '"><div class="h"><div><div class="t">' + esc(beanLabel(bean, s[S.biji])) + '</div>' +
       '<div class="meta">' + esc(fmtDate(s[S.tanggal]) || 'Tanggal tidak diisi') +
       (isBlank(s[S.id]) ? '' : ' · #' + esc(s[S.id])) +
       (bean && !isBlank(bean[B.roastery]) ? ' · ' + esc(bean[B.roastery]) : '') + '</div></div>' + scoreBadge(s[S.skor]) + '</div>' +
@@ -547,6 +665,15 @@ if (typeof module !== 'undefined' && module.exports) {
       (!isBlank(s[S.deskriptor]) ? '<div class="notes">' + esc(s[S.deskriptor]) + '</div>' : '') +
       (!isBlank(s[S.tweak]) ? '<div class="notes muted small">➜ Tweak: ' + esc(s[S.tweak]) + '</div>' : '') +
       '</a>';
+    return '<div class="brewbox">' + card + '<div class="brewact">' +
+      aiButton(isBlank(s[S.id]) ? { bean: s[S.biji] } : { brew: s[S.id] }, 'Analisa AI') + '</div></div>';
+  }
+
+  function aiButton(target, label) {
+    var on = backendOn();
+    return '<button type="button" class="sm ai ghost" data-ai="1"' +
+      (target.brew ? ' data-brew="' + esc(target.brew) + '"' : '') + (target.bean ? ' data-bean="' + esc(target.bean) + '"' : '') +
+      (on ? '' : ' disabled title="' + esc(SETUP_HINT) + '"') + '>✨ ' + esc(label) + '</button>';
   }
 
   /* ---------- halaman: ringkasan ---------- */
@@ -661,6 +788,8 @@ if (typeof module !== 'undefined' && module.exports) {
     var h = '<div class="crumbs"><a href="#/biji">← Semua biji</a></div>' +
       '<div class="panel"><div class="beanrow"><div><h2 style="margin:0">' + esc(beanLabel(bean)) + '</h2>' +
       '<div class="muted small">ID ' + esc(id) + (isBlank(bean[B.roastery]) ? '' : ' · ' + esc(bean[B.roastery])) + '</div></div>' + scoreBadge(st.avgScore) + '</div>' +
+      '<div class="row" style="margin-top:10px">' + aiButton({ bean: id }, 'Analisa AI biji ini') +
+      (backendOn() ? '' : '<span class="muted small">' + esc(SETUP_HINT) + '</span>') + '</div>' +
       '<div class="cards" style="margin:12px 0">' +
       stat('Umur sejak roasting', st.ageDays === null ? '–' : (st.ageDays < 0 ? '0' : st.ageDays) + ' hr', isBlank(bean[B.roast]) ? 'Tanggal roasting belum diisi' : 'Roasting ' + fmtDate(bean[B.roast])) +
       stat('Jumlah seduhan', st.count, '') +
@@ -727,7 +856,8 @@ if (typeof module !== 'undefined' && module.exports) {
     var h = '<div class="legend"><i></i>Sel kuning = berbeda dari seduhan pertama (pembanding); angka kecil = selisih.</div>' +
       '<div class="tablewrap"><table class="cmp"><thead><tr><th class="sticky">Parameter</th>' +
       brews.map(function (s, i) {
-        return '<th>' + esc(fmtDate(s[S.tanggal]) || 'Tanpa tanggal') + (isBlank(s[S.id]) ? '' : '<div class="small muted">#' + esc(s[S.id]) + (i === 0 ? ' · pembanding' : '') + '</div>') + '</th>';
+        return '<th>' + esc(fmtDate(s[S.tanggal]) || 'Tanpa tanggal') + (isBlank(s[S.id]) ? '' : '<div class="small muted">#' + esc(s[S.id]) + (i === 0 ? ' · pembanding' : '') + '</div>') +
+          (isBlank(s[S.id]) ? '' : '<div style="margin-top:4px">' + aiButton({ brew: s[S.id] }, 'Analisa') + '</div>') + '</th>';
       }).join('') + '</tr></thead><tbody>';
     rows.forEach(function (r) {
       if (r.section) { h += '<tr class="sect"><td colspan="' + (brews.length + 1) + '">' + esc(r.section) + '</td></tr>'; return; }
@@ -856,6 +986,7 @@ if (typeof module !== 'undefined' && module.exports) {
       else if (r === 'biji' && parts[1]) renderBijiDetail(decodeURIComponent(parts[1]));
       else if (r === 'biji') renderBijiList();
       else if (r === 'grafik') renderGrafik();
+      else if (r === 'catat') renderCatat();
       else renderHome();
     } catch (err) { showError(err); }
   }
@@ -866,7 +997,7 @@ if (typeof module !== 'undefined' && module.exports) {
       '</div><button type="button" onclick="location.reload()">Muat ulang</button>';
   }
 
-  function onData(data) {
+  function setData(data) {
     data = data || {};
     data.biji = data.biji || [];
     data.seduhan = data.seduhan || [];
@@ -875,21 +1006,288 @@ if (typeof module !== 'undefined' && module.exports) {
     state.idx = indexBiji(data.biji);
     state.today = data.meta.today || new Date().toISOString().slice(0, 10);
     var sub = document.getElementById('subtitle');
-    sub.textContent = (data.meta.spreadsheetName ? data.meta.spreadsheetName + ' · ' : '') + 'dashboard baca-saja';
-    if (data.meta.warnings && data.meta.warnings.length) {
+    sub.textContent = (data.meta.spreadsheetName ? data.meta.spreadsheetName + ' · ' : '') +
+      (backendOn() ? 'jurnal dengan input & analisa AI' : 'dashboard baca-saja');
+  }
+
+  function onData(data) {
+    setData(data);
+    var d = state.data;
+    if (d.meta.warnings && d.meta.warnings.length) {
       route();
-      app.insertAdjacentHTML('afterbegin', '<div class="warn">' + data.meta.warnings.map(esc).join('<br>') + '</div>');
+      app.insertAdjacentHTML('afterbegin', '<div class="warn">' + d.meta.warnings.map(esc).join('<br>') + '</div>');
     } else route();
   }
 
   window.addEventListener('hashchange', route);
 
-  // Data statis: dibaca dari data.json (bentuk sama dengan keluaran getData() di Apps Script).
-  fetch('data.json?' + Date.now(), { cache: 'no-store' })
-    .then(function (r) {
+  /* ---------- panggilan ke backend Apps Script ---------- */
+  /** POST text/plain (tanpa preflight CORS), ikuti redirect. Resolve dengan JSON {ok:true,...} atau reject Error(.code). */
+  function api(payload) {
+    var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var timer = ctl ? setTimeout(function () { ctl.abort(); }, 110000) : null;
+    var opts = { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) };
+    if (ctl) opts.signal = ctl.signal;
+    return fetch(BACKEND_URL, opts).then(function (r) {
+      if (!r.ok) throw new Error('Server membalas HTTP ' + r.status + '.');
+      return r.json();
+    }, function () { throw new Error('Tidak dapat terhubung ke server. Periksa koneksi lalu coba lagi.'); })
+    .then(function (j) {
+      if (timer) clearTimeout(timer);
+      if (!j || j.ok !== true) {
+        var e = new Error((j && j.error) || 'Server mengembalikan jawaban yang tidak dikenal.');
+        e.code = j && j.code;
+        throw e;
+      }
+      return j;
+    }, function (err) { if (timer) clearTimeout(timer); throw err; });
+  }
+
+  function badPin(err) { return err && (err.code === 'PIN_SALAH' || err.code === 'PIN_BELUM_DIATUR'); }
+  function forgetPin() { state.pin = ''; pinStore.clear(); }
+
+  /* ---------- halaman: catat ---------- */
+  function fieldHtml(grp, f, i) {
+    var id = 'f-' + grp + '-' + i, attrs = ' id="' + id + '" data-grp="' + grp + '" data-col="' + esc(f.col) + '"';
+    var inp;
+    if (f.type === 'area') inp = '<textarea' + attrs + ' rows="2" style="min-height:70px"></textarea>';
+    else if (f.type === 'num') inp = '<input type="number" inputmode="decimal" step="' + (f.step || 'any') + '"' + (f.min !== undefined ? ' min="' + f.min + '" max="' + f.max + '"' : '') + attrs + '>';
+    else if (f.type === 'date') inp = '<input type="date"' + attrs + '>';
+    else inp = '<input type="text"' + attrs + (f.ph ? ' placeholder="' + esc(f.ph) + '"' : '') + '>';
+    return '<div class="field' + (f.wide ? ' wide' : '') + '"><label for="' + id + '">' + esc(f.label) + (f.req ? ' *' : '') + '</label>' + inp +
+      (f.hint ? '<div class="hint">' + esc(f.hint) + '</div>' : '') + '</div>';
+  }
+
+  function formHtml(grp, defs) {
+    var h = '', open = false;
+    defs.forEach(function (f, i) {
+      if (f.section) {
+        if (open) h += '</div>';
+        h += '<h3 style="margin:16px 0 8px">' + esc(f.section) + '</h3><div class="fgrid">'; open = true;
+      } else {
+        if (!open) { h += '<div class="fgrid">'; open = true; }
+        h += fieldHtml(grp, f, i);
+      }
+    });
+    return h + (open ? '</div>' : '');
+  }
+
+  function todayLocal() { return state.today || new Date().toISOString().slice(0, 10); }
+
+  function renderCatat() {
+    var d = state.data, on = backendOn();
+    var h = '<h2>Catat Seduhan</h2>';
+    if (state.flash) { h += '<div class="ok" id="cflash">' + esc(state.flash) + '</div>'; state.flash = ''; }
+    if (!on) {
+      h += '<div class="setup"><b>Fitur Catat &amp; Analisa AI belum aktif.</b><br>Pasang backend Apps Script, lalu isi <code>BACKEND_URL</code> di bagian atas <code>index.html</code>. ' +
+        'Langkahnya ada di <code>backend/SETUP-id.md</code>. Sementara itu dasbor tetap bisa dipakai membaca data.</div>';
+    }
+    var beans = sortBrews(d.seduhan, 'desc');
+    var defBean = beans.length ? String(beans[0][S.biji]) : (d.biji.length ? String(d.biji[0][B.id]) : '__new');
+    var opts = d.biji.map(function (b) {
+      return '<option value="' + esc(b[B.id]) + '"' + (String(b[B.id]) === defBean ? ' selected' : '') + '>' + esc(beanLabel(b) + ' (' + b[B.id] + ')') + '</option>';
+    }).join('') + '<option value="__new"' + (defBean === '__new' ? ' selected' : '') + '>➕ Biji baru…</option>';
+    var stored = pinStore.get();
+
+    h += '<fieldset id="cfs"' + (on ? '' : ' disabled') + '>' +
+      '<div class="panel"><h3>PIN</h3><div class="field"><label for="cpin">PIN aplikasi</label><input type="password" id="cpin" autocomplete="current-password" inputmode="numeric" placeholder="PIN dari APP_PIN" value="' + esc(state.pin || stored) + '"></div>' +
+      '<label class="check"><input type="checkbox" id="cremember"' + (stored ? ' checked' : '') + '> Ingat di perangkat ini</label>' +
+      '<div class="muted small" style="margin-top:6px">PIN hanya dikirim ke backend Apps Script milikmu. Jangan centang "ingat" di perangkat bersama.</div></div>' +
+      '<div class="panel"><h3>Ceritakan seduhanmu</h3><div class="field"><label for="ctext">Teks bebas</label><textarea id="ctext" placeholder="Contoh: Tadi pagi seduh Kerinci Honey pakai V60, 16 g kopi 256 g air suhu 94, grind 24 klik, 3:00. Rasanya gula merah dan jeruk manis, skor 8."></textarea></div>' +
+      '<div class="row" style="margin-top:10px"><button type="button" id="cai" class="ai">✨ Bantu isi dengan AI</button><span class="muted small" id="cstatus" role="status"></span></div></div>' +
+      '<div class="panel"><h3>Biji</h3><div class="field"><label for="cbiji">Pilih biji</label><select id="cbiji">' + opts + '</select></div>' +
+      '<div id="cnew" style="margin-top:12px;display:' + (defBean === '__new' ? 'block' : 'none') + '"><div class="muted small" style="margin-bottom:8px">Biji baru akan ditambahkan ke tab "Biji" dengan ID otomatis.</div>' + formHtml('b', FORM_BIJI) + '</div></div>' +
+      '<div class="panel"><h3>Seduhan</h3>' + formHtml('s', FORM_SEDUH) + '</div>' +
+      '<div class="row"><button type="button" id="csave">Simpan</button><button type="button" id="creset" class="ghost">Kosongkan form</button><span class="muted small" id="csmsg" role="status"></span></div>' +
+      '</fieldset>';
+    app.innerHTML = h;
+    setVal('s', 'Tanggal Seduh', todayLocal());
+
+    function status(id, msg, kind) {
+      var el = document.getElementById(id);
+      el.textContent = msg || '';
+      el.style.color = kind === 'err' ? 'var(--bad)' : (kind === 'ok' ? 'var(--good)' : 'var(--muted)');
+    }
+    function readPin(msgId) {
+      var pin = $('#cpin').value.trim();
+      if (!pin) { status(msgId, 'Masukkan PIN dulu.', 'err'); $('#cpin').focus(); return null; }
+      state.pin = pin;
+      if ($('#cremember').checked) pinStore.set(pin); else pinStore.clear();
+      return pin;
+    }
+    function toggleNew() { $('#cnew').style.display = $('#cbiji').value === '__new' ? 'block' : 'none'; }
+    $('#cbiji').addEventListener('change', toggleNew);
+
+    $('#cai').addEventListener('click', function () {
+      var text = $('#ctext').value.trim();
+      if (!text) { status('cstatus', 'Tulis dulu ceritamu di kotak teks.', 'err'); return; }
+      var pin = readPin('cstatus'); if (!pin) return;
+      var btn = $('#cai'); btn.disabled = true; status('cstatus', 'AI sedang membaca ceritamu…');
+      var known = d.biji.map(function (b) { return { id: b[B.id], nama: b[B.nama], roastery: b[B.roastery] }; });
+      api({ action: 'parse', pin: pin, text: text, knownBeans: known }).then(function (j) {
+        var n = applyDraft(j.draft || {});
+        status('cstatus', 'Draf terisi (' + n + ' kolom). Periksa dulu, ubah bila perlu, lalu tekan Simpan.', 'ok');
+        var f = $('#cbiji'); if (f && f.scrollIntoView) f.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }).catch(function (err) {
+        if (badPin(err)) forgetPin();
+        status('cstatus', err.message, 'err');
+      }).then(function () { btn.disabled = false; });
+    });
+
+    $('#creset').addEventListener('click', function () { renderCatat(); });
+
+    $('#csave').addEventListener('click', function () {
+      var pin = readPin('csmsg'); if (!pin) return;
+      var sel = $('#cbiji').value, isNew = sel === '__new';
+      var seduhan = collect('s'), biji = isNew ? collect('b') : null;
+      if (isNew && !biji['Nama Biji / Lot']) { status('csmsg', 'Nama biji wajib diisi untuk biji baru.', 'err'); return; }
+      if (!isNew && !sel) { status('csmsg', 'Pilih biji dulu.', 'err'); return; }
+      if (!seduhan['Tanggal Seduh']) { status('csmsg', 'Tanggal seduh wajib diisi.', 'err'); return; }
+      if (!isNew) seduhan['ID Biji'] = sel;
+      var payload = { action: 'save', pin: pin, seduhan: seduhan };
+      if (isNew) payload.biji = biji;
+      var btn = $('#csave'); btn.disabled = true; status('csmsg', 'Menyimpan…');
+      api(payload).then(function (j) {
+        var ids = j.ids || {};
+        state.flash = 'Tersimpan ✔ Seduhan ' + (ids.seduhan || '') + ' untuk biji ' + (ids.biji || '') + (ids.bijiBaru ? ' (biji baru)' : '') + '.';
+        if (j.data) { var nd = j.data; nd.meta = nd.meta || {}; nd.meta.today = todayLocal(); setData(nd); }
+        state.source = 'backend';
+        route();
+      }).catch(function (err) {
+        if (badPin(err)) forgetPin();
+        status('csmsg', err.message, 'err');
+        btn.disabled = false;
+      });
+    });
+  }
+
+  function fieldEl(grp, col) { return app.querySelector('[data-grp="' + grp + '"][data-col="' + col + '"]'); }
+  function setVal(grp, col, val, ai) {
+    var el = fieldEl(grp, col);
+    if (!el) return false;
+    el.value = val === null || val === undefined ? '' : String(val);
+    if (el.parentNode) el.parentNode.className = el.parentNode.className.replace(/\s*\bai\b/g, '') + (ai ? ' ai' : '');
+    return true;
+  }
+  function collect(grp) {
+    var out = {};
+    var els = app.querySelectorAll('[data-grp="' + grp + '"]');
+    for (var i = 0; i < els.length; i++) {
+      var el = els[i], v = String(el.value).trim();
+      if (v === '') continue;
+      out[el.getAttribute('data-col')] = el.type === 'number' ? Number(v) : v;
+    }
+    return out;
+  }
+  /** Isi form dari draf AI; kembalikan jumlah kolom terisi. */
+  function applyDraft(draft) {
+    var n = 0, sd = draft.seduhan || {}, bj = draft.biji || null;
+    var els = app.querySelectorAll('[data-grp]');
+    for (var i = 0; i < els.length; i++) { if (els[i].parentNode) els[i].parentNode.className = els[i].parentNode.className.replace(/\s*\bai\b/g, ''); }
+    var sel = $('#cbiji');
+    var wantId = sd['ID Biji'];
+    if (wantId && state.idx[wantId]) { sel.value = String(wantId); n++; }
+    else if (bj) {
+      sel.value = '__new';
+      Object.keys(bj).forEach(function (k) { if (setVal('b', k, bj[k], true)) n++; });
+    }
+    $('#cnew').style.display = sel.value === '__new' ? 'block' : 'none';
+    Object.keys(sd).forEach(function (k) { if (k !== 'ID Biji' && setVal('s', k, sd[k], true)) n++; });
+    return n;
+  }
+
+  /* ---------- panel analisa AI ---------- */
+  function closeAnalysis() { var o = document.getElementById('aipanel'); if (o && o.parentNode) o.parentNode.removeChild(o); }
+
+  function openAnalysis(target) {
+    closeAnalysis();
+    var title = target.brew ? 'Seduhan ' + target.brew : 'Biji ' + (beanLabel(state.idx[target.bean], target.bean));
+    var ov = document.createElement('div');
+    ov.className = 'ovl'; ov.id = 'aipanel';
+    ov.innerHTML = '<div class="sheet" role="dialog" aria-modal="true" aria-label="Analisa AI"><div class="row"><h3 style="margin:0">✨ Analisa AI</h3><span class="spacer"></span>' +
+      '<button type="button" class="ghost sm" id="aiclose">Tutup</button></div><div class="muted small" style="margin:2px 0 10px">' + esc(title) + '</div><div id="aibody"></div></div>';
+    document.body.appendChild(ov);
+    ov.addEventListener('click', function (e) { if (e.target === ov) closeAnalysis(); });
+    document.getElementById('aiclose').addEventListener('click', closeAnalysis);
+    var body = document.getElementById('aibody');
+
+    function pinPrompt(msg) {
+      body.innerHTML = (msg ? '<div class="error">' + esc(msg) + '</div>' : '') +
+        '<div class="field"><label for="aipin">PIN aplikasi</label><input type="password" id="aipin" inputmode="numeric" autocomplete="current-password"></div>' +
+        '<label class="check"><input type="checkbox" id="airemember"> Ingat di perangkat ini</label>' +
+        '<div class="row" style="margin-top:12px"><button type="button" id="aigo" class="ai">Lanjut</button></div>';
+      document.getElementById('aigo').addEventListener('click', function () {
+        var pin = document.getElementById('aipin').value.trim();
+        if (!pin) return;
+        state.pin = pin;
+        if (document.getElementById('airemember').checked) pinStore.set(pin);
+        run('');
+      });
+    }
+
+    function run(question) {
+      var pin = knownPin();
+      if (!pin) { pinPrompt(''); return; }
+      body.innerHTML = '<div class="loading" id="ailoading"><div class="spinner"></div>AI sedang menganalisa riwayat seduhanmu… (bisa 10–40 detik)</div>';
+      var payload = { action: 'analyze', pin: pin };
+      if (target.brew) payload.seduhanId = target.brew;
+      if (target.bean) payload.bijiId = target.bean;
+      if (question) payload.question = question;
+      api(payload).then(function (j) {
+        if (!document.getElementById('aipanel')) return;
+        body.innerHTML = '<div class="aires" id="airesult">' + miniMarkdown(j.analysis) + '</div>' +
+          '<div class="muted small" style="margin-top:10px">Berdasarkan ' + esc(j.usedBrews || '?') + ' dari ' + esc(j.totalBrews || '?') + ' seduhan di jurnalmu' + (j.model ? ' · model ' + esc(j.model) : '') +
+          '. Saran AI hanya perkiraan dari data pribadimu, bukan kepastian; coba ubah satu variabel per seduhan.</div>' +
+          '<div class="aiq"><input type="text" id="aiquestion" placeholder="Tanya lagi, mis. kenapa terasa tipis?" maxlength="500"><button type="button" id="aiask" class="ai">Tanya</button></div>';
+        document.getElementById('aiask').addEventListener('click', function () {
+          run(document.getElementById('aiquestion').value.trim());
+        });
+      }).catch(function (err) {
+        if (!document.getElementById('aipanel')) return;
+        if (badPin(err)) { forgetPin(); pinPrompt(err.message); return; }
+        body.innerHTML = '<div class="error" id="aierror">' + esc(err.message) + '</div><button type="button" id="airetry" class="ai">Coba lagi</button>';
+        document.getElementById('airetry').addEventListener('click', function () { run(question); });
+      });
+    }
+    run('');
+  }
+
+  app.addEventListener('click', function (e) {
+    var t = e.target && e.target.closest ? e.target.closest('[data-ai]') : null;
+    if (!t || t.disabled || !backendOn()) return;
+    var brew = t.getAttribute('data-brew'), bean = t.getAttribute('data-bean');
+    if (brew) {
+      var found = null;
+      state.data.seduhan.forEach(function (s) { if (String(s[S.id]) === brew) found = s; });
+      openAnalysis({ brew: brew, bean: found ? found[S.biji] : '' });
+    } else if (bean) openAnalysis({ bean: bean });
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAnalysis(); });
+
+  /* ---------- muat data ---------- */
+  function fromJson() {
+    return fetch('data.json?' + Date.now(), { cache: 'no-store' }).then(function (r) {
       if (!r.ok) throw new Error('Gagal memuat data.json (HTTP ' + r.status + ').');
       return r.json();
-    })
+    });
+  }
+  function loadData() {
+    if (!backendOn()) { state.source = 'json'; return fromJson(); }
+    return fetch(backendUrl(BACKEND_URL.trim(), 'action=data'), { redirect: 'follow' }).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }).then(function (d) {
+      if (!d || !Array.isArray(d.biji) || !Array.isArray(d.seduhan)) throw new Error((d && d.error) || 'Data backend tidak valid.');
+      state.source = 'backend';
+      return d;
+    }).catch(function () {
+      state.source = 'fallback';
+      setNotice('<div class="warn" id="fbnotice">Backend belum terjangkau, menampilkan <code>data.json</code> (mungkin belum terbaru).</div>');
+      return fromJson();
+    });
+  }
+
+  loadData()
     .then(function (d) {
       d = d || {};
       d.meta = d.meta || {};
@@ -901,7 +1299,7 @@ if (typeof module !== 'undefined' && module.exports) {
     .catch(showError);
 
   // untuk pengujian
-  window.__app = { onData: onData, state: state, route: route };
+  window.__app = { onData: onData, state: state, route: route, openAnalysis: openAnalysis };
 })();
 </script>
 </body>
