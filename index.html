@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jurnal Seduh Kopi</title>
+<style>
+:root{
+  --bg:#f6efe7; --card:#fffaf4; --ink:#2e1f16; --muted:#7a6454; --line:#e3d3c2;
+  --brown:#6f4e37; --brown-d:#4a2f1d; --caramel:#c68b59; --cream:#efe0cf; --accent:#a0522d;
+  --diff:#fff0c2; --diff-b:#e5b53b; --good:#3f7d4e; --bad:#b0412e;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header.top{background:linear-gradient(135deg,var(--brown-d),var(--brown));color:#fff;padding:14px 16px 0;position:sticky;top:0;z-index:20;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+header.top h1{margin:0 0 2px;font-size:19px;letter-spacing:.2px}
+header.top .sub{font-size:12px;opacity:.8;margin-bottom:8px}
+nav{display:flex;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+nav a{color:#f3e3d1;text-decoration:none;padding:9px 14px;border-radius:8px 8px 0 0;font-weight:600;white-space:nowrap;font-size:14px}
+nav a.active{background:var(--bg);color:var(--brown-d)}
+main{max-width:1100px;margin:0 auto;padding:16px 12px 48px}
+h2{font-size:18px;margin:4px 0 12px;color:var(--brown-d)}
+h3{font-size:15px;margin:0 0 8px;color:var(--brown-d)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;box-shadow:0 1px 2px rgba(74,47,29,.06)}
+.stat .lbl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.stat .val{font-size:28px;font-weight:700;color:var(--brown-d);line-height:1.2;margin-top:2px}
+.stat .hint{font-size:12px;color:var(--muted);margin-top:2px;overflow-wrap:anywhere}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:16px}
+.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:10px}
+.filters label{font-size:12px;color:var(--muted);display:block;margin-bottom:2px}
+input,select,button{font:inherit}
+input[type=text],input[type=search],input[type=date],input[type=number],select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);min-height:38px}
+button,.btn{background:var(--brown);color:#fff;border:0;border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:600;min-height:38px;text-decoration:none;display:inline-block}
+button.ghost,.btn.ghost{background:transparent;color:var(--brown);border:1px solid var(--brown)}
+button:disabled{opacity:.5;cursor:default}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.spacer{flex:1}
+.empty{text-align:center;padding:28px 12px;color:var(--muted);background:var(--card);border:1px dashed var(--line);border-radius:12px}
+.empty b{display:block;color:var(--brown-d);font-size:16px;margin-bottom:4px}
+.error{background:#fdecea;border:1px solid #e5a79e;color:#7d2a1e;border-radius:10px;padding:12px;margin-bottom:12px}
+.warn{background:#fff6dc;border:1px solid #e5c76b;color:#6b5311;border-radius:10px;padding:10px;margin-bottom:12px;font-size:13px}
+.loading{text-align:center;padding:40px;color:var(--muted)}
+.spinner{width:28px;height:28px;border:3px solid var(--cream);border-top-color:var(--brown);border-radius:50%;margin:0 auto 10px;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.list{display:grid;gap:10px}
+.brew{display:block;color:inherit;text-decoration:none;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;border-left:5px solid var(--caramel)}
+.brew:hover{border-color:var(--caramel)}
+.brew .h{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.brew .t{font-weight:700;color:var(--brown-d);overflow-wrap:anywhere}
+.brew .meta{font-size:12.5px;color:var(--muted);margin-top:2px}
+.brew .params{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.brew .notes{margin-top:8px;font-size:13.5px}
+.score{min-width:46px;text-align:center;border-radius:10px;padding:4px 8px;font-weight:700;color:#fff;background:var(--brown);font-size:16px;flex:none}
+.score.hi{background:var(--good)} .score.mid{background:var(--caramel)} .score.lo{background:var(--bad)} .score.na{background:#b9a898}
+.chip{display:inline-block;background:var(--cream);color:var(--brown-d);border-radius:999px;padding:2px 9px;font-size:12px}
+.chip.pick{cursor:pointer;border:1px solid var(--line);background:#fff;padding:5px 11px;user-select:none}
+.chip.pick.on{background:var(--brown);color:#fff;border-color:var(--brown)}
+.chip.pick.off{opacity:.55}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.chartbox{position:relative;height:340px}
+.chartbox.sm{height:300px}
+dl.info{display:grid;grid-template-columns:minmax(110px,170px) 1fr;gap:6px 12px;margin:0}
+dl.info dt{color:var(--muted);font-size:13px}
+dl.info dd{margin:0;overflow-wrap:anywhere}
+.tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:10px;background:#fff}
+table.cmp{border-collapse:collapse;width:100%;font-size:13.5px}
+table.cmp th,table.cmp td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;min-width:110px}
+table.cmp thead th{background:var(--cream);color:var(--brown-d);position:sticky;top:0;white-space:nowrap}
+table.cmp th.sticky,table.cmp td.sticky{position:sticky;left:0;background:#faf3ea;font-weight:600;color:var(--brown-d);min-width:130px;z-index:1;box-shadow:1px 0 0 var(--line)}
+table.cmp thead th.sticky{z-index:2;background:var(--cream)}
+table.cmp tr.sect td{background:var(--cream);font-weight:700;color:var(--brown-d);text-transform:uppercase;font-size:11.5px;letter-spacing:.5px}
+table.cmp td.diff{background:var(--diff);box-shadow:inset 3px 0 0 var(--diff-b)}
+table.cmp td.base{color:var(--muted)}
+.delta{display:inline-block;font-size:11px;font-weight:700;margin-left:5px;padding:0 5px;border-radius:6px;background:#fff;border:1px solid var(--diff-b);color:#7a5b00}
+.legend{font-size:12.5px;color:var(--muted);margin:6px 0 8px}
+.legend i{display:inline-block;width:14px;height:12px;background:var(--diff);border-left:3px solid var(--diff-b);vertical-align:middle;margin-right:4px}
+.crumbs{margin-bottom:10px;font-size:13px}
+.crumbs a{color:var(--brown)}
+a{color:var(--accent)}
+.beanrow{display:flex;gap:12px;align-items:center;justify-content:space-between}
+@media(max-width:520px){
+  .stat .val{font-size:24px}
+  dl.info{grid-template-columns:1fr}
+  dl.info dt{margin-top:6px}
+  .chartbox{height:300px}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>&#9749; Jurnal Seduh Kopi</h1>
+  <div class="sub" id="subtitle">Dashboard baca-saja (read-only)</div>
+  <nav id="nav">
+    <a href="#/" data-r="home">Ringkasan</a>
+    <a href="#/seduhan" data-r="seduhan">Seduhan</a>
+    <a href="#/biji" data-r="biji">Biji</a>
+    <a href="#/grafik" data-r="grafik">Grafik</a>
+  </nav>
+</header>
+<main id="app"><div class="loading"><div class="spinner"></div>Memuat data dari Google Sheet&hellip;</div></main>
+
+<!-- ===================== LOGIKA MURNI (dapat diuji di Node) ===================== -->
+<script id="logic">
+var FIELD = {
+  biji: {
+    id: 'ID Biji', nama: 'Nama Biji / Lot', roastery: 'Roastery', negara: 'Negara',
+    region: 'Region / Terroir', farm: 'Farm / Produsen', altitude: 'Ketinggian (mdpl)',
+    spesies: 'Spesies', varietas: 'Varietas', proses: 'Proses Pasca Panen', profil: 'Profil Roasting',
+    roast: 'Tanggal Roasting', beli: 'Tanggal Beli', berat: 'Berat (g)', harga: 'Harga',
+    flavorNotes: 'Catatan Roastery (flavor notes)', catatan: 'Catatan Pribadi'
+  },
+  seduh: {
+    id: 'ID Seduhan', tanggal: 'Tanggal Seduh', biji: 'ID Biji', hari: 'Hari Sejak Roasting',
+    dripper: 'Dripper', filter: 'Kertas Filter', air: 'Merek Air', suhu: 'Suhu Air (C)',
+    dosis: 'Dosis Kopi (g)', airTotal: 'Air Total (g)', rasio: 'Rasio', grinder: 'Grinder',
+    grind: 'Setting Grind', pouring: 'Pouring Interval (detik per langkah)', waktu: 'Total Brew Time',
+    aroma: 'Aroma (1-5)', flavor: 'Flavor (1-5)', aftertaste: 'Aftertaste (1-5)',
+    acidity: 'Acidity (1-5)', sweetness: 'Sweetness (1-5)', body: 'Body (1-5)', balance: 'Balance (1-5)',
+    deskriptor: 'Deskriptor Rasa / Notes', skor: 'Skor Keseluruhan (1-10)',
+    catatan: 'Catatan Pribadi', tweak: 'Tweak Berikutnya'
+  }
+};
+
+var SCA = [
+  { key: 'Aroma (1-5)', label: 'Aroma' },
+  { key: 'Flavor (1-5)', label: 'Flavor' },
+  { key: 'Aftertaste (1-5)', label: 'Aftertaste' },
+  { key: 'Acidity (1-5)', label: 'Acidity' },
+  { key: 'Sweetness (1-5)', label: 'Sweetness' },
+  { key: 'Body (1-5)', label: 'Body' },
+  { key: 'Balance (1-5)', label: 'Balance' }
+];
+
+var BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+
+function esc(v) {
+  if (v === null || v === undefined) return '';
+  return String(v).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
+function isBlank(v) { return v === null || v === undefined || v === ''; }
+function isNum(v) { return typeof v === 'number' && isFinite(v); }
+
+/** "yyyy-MM-dd..." -> epoch UTC hari (ms) atau null */
+function parseDay(s) {
+  var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s || '');
+  if (!m) return null;
+  return Date.UTC(+m[1], +m[2] - 1, +m[3]);
+}
+
+function daysBetween(fromIso, toIso) {
+  var a = parseDay(fromIso), b = parseDay(toIso);
+  if (a === null || b === null) return null;
+  return Math.round((b - a) / 86400000);
+}
+
+function fmtDate(s) {
+  var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s || '');
+  if (!m) return isBlank(s) ? '' : String(s);
+  return (+m[3]) + ' ' + BULAN[+m[2] - 1] + ' ' + m[1];
+}
+
+function fmtNum(n, digits) {
+  if (!isNum(n)) return '';
+  var d = digits === undefined ? 1 : digits;
+  var r = Math.round(n * Math.pow(10, d)) / Math.pow(10, d);
+  return String(r).replace('.', ',');
+}
+
+function fmtRupiah(n) {
+  if (!isNum(n)) return '';
+  return 'Rp ' + Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+function avg(arr) {
+  var xs = arr.filter(isNum);
+  if (!xs.length) return null;
+  return xs.reduce(function (a, b) { return a + b; }, 0) / xs.length;
+}
+
+function scoreClass(s) {
+  if (!isNum(s)) return 'na';
+  if (s >= 8) return 'hi';
+  if (s >= 6) return 'mid';
+  return 'lo';
+}
+
+/** Indeks biji berdasarkan ID */
+function indexBiji(biji) {
+  var map = {};
+  (biji || []).forEach(function (b) {
+    var id = b[FIELD.biji.id];
+    if (!isBlank(id)) map[id] = b;
+  });
+  return map;
+}
+
+function beanLabel(b, id) {
+  if (!b) return isBlank(id) ? '(tanpa biji)' : String(id) + ' (tidak ditemukan)';
+  var n = b[FIELD.biji.nama];
+  return isBlank(n) ? String(b[FIELD.biji.id]) : n;
+}
+
+/** Urut tanggal seduh (kosong di akhir); sekunder berdasarkan baris sheet */
+function sortBrews(list, dir) {
+  var mul = dir === 'asc' ? 1 : -1;
+  return list.slice().sort(function (a, b) {
+    var da = parseDay(a[FIELD.seduh.tanggal]), db = parseDay(b[FIELD.seduh.tanggal]);
+    if (da === null && db === null) return mul * ((a._row || 0) - (b._row || 0));
+    if (da === null) return 1;
+    if (db === null) return -1;
+    if (da !== db) return mul * (da - db);
+    return mul * ((a._row || 0) - (b._row || 0));
+  });
+}
+
+/** Ringkasan untuk kartu */
+function summarize(data) {
+  var brews = (data && data.seduhan) || [];
+  var beans = (data && data.biji) || [];
+  var idx = indexBiji(beans);
+  var scored = brews.filter(function (s) { return isNum(s[FIELD.seduh.skor]); });
+  var best = null;
+  scored.forEach(function (s) {
+    var sc = s[FIELD.seduh.skor];
+    if (!best) { best = s; return; }
+    var bs = best[FIELD.seduh.skor];
+    if (sc > bs || (sc === bs && (parseDay(s[FIELD.seduh.tanggal]) || 0) > (parseDay(best[FIELD.seduh.tanggal]) || 0))) best = s;
+  });
+  return {
+    totalSeduhan: brews.length,
+    totalBiji: beans.length,
+    rataSkor: avg(scored.map(function (s) { return s[FIELD.seduh.skor]; })),
+    jumlahBerskor: scored.length,
+    terbaik: best,
+    terbaikBiji: best ? idx[best[FIELD.seduh.biji]] || null : null
+  };
+}
+
+/** Filter daftar seduhan. f: {q, biji, dripper, dari, sampai, minSkor, maxSkor} */
+function filterBrews(brews, beans, f) {
+  f = f || {};
+  var idx = indexBiji(beans);
+  var q = String(f.q || '').trim().toLowerCase();
+  var dari = f.dari ? parseDay(f.dari) : null;
+  var sampai = f.sampai ? parseDay(f.sampai) : null;
+  var minS = isBlank(f.minSkor) || f.minSkor === '' ? null : Number(f.minSkor);
+  var maxS = isBlank(f.maxSkor) || f.maxSkor === '' ? null : Number(f.maxSkor);
+  return brews.filter(function (s) {
+    if (f.biji && String(s[FIELD.seduh.biji]) !== String(f.biji)) return false;
+    if (f.dripper && String(s[FIELD.seduh.dripper] || '').toLowerCase() !== String(f.dripper).toLowerCase()) return false;
+    var d = parseDay(s[FIELD.seduh.tanggal]);
+    if (dari !== null && (d === null || d < dari)) return false;
+    if (sampai !== null && (d === null || d > sampai)) return false;
+    var sc = s[FIELD.seduh.skor];
+    if (minS !== null && !isNaN(minS) && (!isNum(sc) || sc < minS)) return false;
+    if (maxS !== null && !isNaN(maxS) && (!isNum(sc) || sc > maxS)) return false;
+    if (q) {
+      var b = idx[s[FIELD.seduh.biji]];
+      var hay = [];
+      Object.keys(s).forEach(function (k) { if (k.charAt(0) !== '_' && !isBlank(s[k])) hay.push(String(s[k])); });
+      if (b) {
+        [FIELD.biji.nama, FIELD.biji.roastery, FIELD.biji.negara, FIELD.biji.region, FIELD.biji.proses, FIELD.biji.varietas]
+          .forEach(function (k) { if (!isBlank(b[k])) hay.push(String(b[k])); });
+      }
+      if (hay.join(' | ').toLowerCase().indexOf(q) === -1) return false;
+    }
+    return true;
+  });
+}
+
+function uniqueValues(list, key) {
+  var seen = {}, out = [];
+  list.forEach(function (x) {
+    var v = x[key];
+    if (isBlank(v)) return;
+    var k = String(v).trim().toLowerCase();
+    if (!seen[k]) { seen[k] = true; out.push(String(v).trim()); }
+  });
+  return out.sort(function (a, b) { return a.localeCompare(b, 'id'); });
+}
+
+/** Baris perbandingan parameter untuk beberapa seduhan (urut lama -> baru). */
+var COMPARE_ROWS = [
+  { section: 'Seduhan' },
+  { key: 'Tanggal Seduh', label: 'Tanggal', type: 'date' },
+  { key: 'Hari Sejak Roasting', label: 'Hari sejak roasting', type: 'num', unit: ' hr' },
+  { section: 'Resep & Peralatan' },
+  { key: 'Dripper', label: 'Dripper', type: 'text' },
+  { key: 'Kertas Filter', label: 'Kertas filter', type: 'text' },
+  { key: 'Merek Air', label: 'Merek air', type: 'text' },
+  { key: 'Suhu Air (C)', label: 'Suhu air', type: 'num', unit: '°C' },
+  { key: 'Dosis Kopi (g)', label: 'Dosis kopi', type: 'num', unit: ' g' },
+  { key: 'Air Total (g)', label: 'Air total', type: 'num', unit: ' g' },
+  { key: 'Rasio', label: 'Rasio', type: 'text' },
+  { key: 'Grinder', label: 'Grinder', type: 'text' },
+  { key: 'Setting Grind', label: 'Setting grind', type: 'text' },
+  { key: 'Pouring Interval (detik per langkah)', label: 'Pouring interval (detik)', type: 'text' },
+  { key: 'Total Brew Time', label: 'Total brew time', type: 'text' },
+  { section: 'Penilaian (1-5)' },
+  { key: 'Aroma (1-5)', label: 'Aroma', type: 'num' },
+  { key: 'Flavor (1-5)', label: 'Flavor', type: 'num' },
+  { key: 'Aftertaste (1-5)', label: 'Aftertaste', type: 'num' },
+  { key: 'Acidity (1-5)', label: 'Acidity', type: 'num' },
+  { key: 'Sweetness (1-5)', label: 'Sweetness', type: 'num' },
+  { key: 'Body (1-5)', label: 'Body', type: 'num' },
+  { key: 'Balance (1-5)', label: 'Balance', type: 'num' },
+  { section: 'Hasil' },
+  { key: 'Skor Keseluruhan (1-10)', label: 'Skor keseluruhan', type: 'num', unit: '/10' },
+  { key: 'Deskriptor Rasa / Notes', label: 'Deskriptor rasa', type: 'text', nodiff: true },
+  { key: 'Catatan Pribadi', label: 'Catatan pribadi', type: 'text', nodiff: true },
+  { key: 'Tweak Berikutnya', label: 'Tweak berikutnya', type: 'text', nodiff: true }
+];
+
+function normForCompare(v, type) {
+  if (isBlank(v)) return '';
+  if (type === 'num' && isNum(v)) return String(Math.round(v * 1000) / 1000);
+  return String(v).trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function displayValue(v, row) {
+  if (isBlank(v)) return '';
+  if (row.type === 'date') return fmtDate(v);
+  if (row.type === 'num' && isNum(v)) return fmtNum(v, 2) + (row.unit || '');
+  return String(v);
+}
+
+/**
+ * Hasil: { sections:[{section}|{label, cells:[{raw,text,diff,delta,base}], differs, nodiff}] }
+ * Pembanding (baseline) = seduhan pertama (kolom paling kiri). Sel yang berbeda dari baseline diberi diff=true.
+ * Baris dianggap "differs" bila ada dua nilai berbeda di antara seduhan (nilai kosong tidak dihitung beda
+ * dari nilai terisi hanya bila semuanya kosong).
+ */
+function buildCompare(brews) {
+  var rows = [];
+  COMPARE_ROWS.forEach(function (r) {
+    if (r.section) { rows.push({ section: r.section }); return; }
+    var norms = brews.map(function (b) { return normForCompare(b[r.key], r.type); });
+    var distinct = {};
+    norms.forEach(function (n) { distinct[n] = true; });
+    var differs = Object.keys(distinct).length > 1;
+    var baseRaw = brews.length ? brews[0][r.key] : null;
+    var cells = brews.map(function (b, i) {
+      var raw = b[r.key];
+      var cell = { raw: raw, text: displayValue(raw, r), diff: false, delta: '', base: i === 0 };
+      if (!r.nodiff && i > 0 && norms[i] !== norms[0]) {
+        cell.diff = true;
+        if (r.type === 'num' && isNum(raw) && isNum(baseRaw)) {
+          var d = Math.round((raw - baseRaw) * 100) / 100;
+          if (d !== 0) cell.delta = (d > 0 ? '+' : '') + fmtNum(d, 2);
+        }
+      }
+      return cell;
+    });
+    rows.push({ label: r.label, key: r.key, cells: cells, differs: differs && !r.nodiff, nodiff: !!r.nodiff });
+  });
+  return rows;
+}
+
+/** Statistik per biji */
+function beanStats(bean, brews, todayIso) {
+  var id = bean[FIELD.biji.id];
+  var mine = sortBrews(brews.filter(function (s) { return String(s[FIELD.seduh.biji]) === String(id); }), 'asc');
+  var scores = mine.map(function (s) { return s[FIELD.seduh.skor]; });
+  var best = null;
+  mine.forEach(function (s) {
+    if (!isNum(s[FIELD.seduh.skor])) return;
+    if (!best || s[FIELD.seduh.skor] >= best[FIELD.seduh.skor]) best = s;
+  });
+  return {
+    id: id,
+    brews: mine,
+    count: mine.length,
+    avgScore: avg(scores),
+    best: best,
+    ageDays: daysBetween(bean[FIELD.biji.roast], todayIso)
+  };
+}
+
+function ageText(days) {
+  if (days === null || days === undefined) return '';
+  if (days < 0) return 'Belum di-roast (' + (-days) + ' hari lagi)';
+  if (days === 0) return 'Hari ini';
+  var t = days + ' hari';
+  if (days >= 14) t += ' (±' + Math.round(days / 7) + ' minggu)';
+  return t;
+}
+
+/** Dataset radar untuk seduhan terpilih */
+var PALETTE = ['#6f4e37', '#c68b59', '#3f7d4e', '#b0412e', '#3a6ea5', '#8e5aa8', '#d4a017', '#2f8f8f'];
+function radarDatasets(brews, idx) {
+  return brews.map(function (s, i) {
+    var col = PALETTE[i % PALETTE.length];
+    var b = idx[s[FIELD.seduh.biji]];
+    return {
+      label: brewLabel(s, b),
+      data: SCA.map(function (a) { return isNum(s[a.key]) ? s[a.key] : 0; }),
+      borderColor: col, backgroundColor: col + '33', pointBackgroundColor: col, borderWidth: 2
+    };
+  });
+}
+
+function brewLabel(s, bean) {
+  var parts = [];
+  var d = fmtDate(s[FIELD.seduh.tanggal]);
+  if (d) parts.push(d);
+  parts.push(bean ? beanLabel(bean) : (s[FIELD.seduh.biji] || ''));
+  var id = s[FIELD.seduh.id];
+  if (!isBlank(id)) parts.push('#' + id);
+  return parts.filter(Boolean).join(' · ');
+}
+
+/** Data untuk grafik skor dari waktu ke waktu. Satu dataset per biji, label per seduhan. */
+function scoreSeries(brews, idx, beanFilter) {
+  var list = sortBrews(brews.filter(function (s) {
+    if (!isNum(s[FIELD.seduh.skor])) return false;
+    return !beanFilter || String(s[FIELD.seduh.biji]) === String(beanFilter);
+  }), 'asc');
+  var labels = list.map(function (s) { return fmtDate(s[FIELD.seduh.tanggal]) || ('#' + (s[FIELD.seduh.id] || '?')); });
+  var order = [], sets = {};
+  list.forEach(function (s, i) {
+    var id = String(s[FIELD.seduh.biji]);
+    if (!sets[id]) {
+      sets[id] = { label: beanLabel(idx[s[FIELD.seduh.biji]], s[FIELD.seduh.biji]), data: list.map(function () { return null; }) };
+      order.push(id);
+    }
+    sets[id].data[i] = s[FIELD.seduh.skor];
+  });
+  return {
+    labels: labels,
+    datasets: order.map(function (id, i) {
+      var col = PALETTE[i % PALETTE.length];
+      var d = sets[id];
+      d.borderColor = col; d.backgroundColor = col + 'cc';
+      return d;
+    }),
+    brews: list
+  };
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    FIELD: FIELD, SCA: SCA, esc: esc, parseDay: parseDay, daysBetween: daysBetween, fmtDate: fmtDate,
+    fmtNum: fmtNum, fmtRupiah: fmtRupiah, avg: avg, summarize: summarize, filterBrews: filterBrews,
+    buildCompare: buildCompare, beanStats: beanStats, ageText: ageText, radarDatasets: radarDatasets,
+    scoreSeries: scoreSeries, sortBrews: sortBrews, indexBiji: indexBiji, uniqueValues: uniqueValues,
+    brewLabel: brewLabel, scoreClass: scoreClass
+  };
+}
+</script>
+
+<!-- ===================== UI ===================== -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script id="ui">
+(function () {
+  var F = FIELD, S = F.seduh, B = F.biji;
+  var app = document.getElementById('app');
+  var state = {
+    data: null, idx: {}, today: null,
+    filters: { q: '', biji: '', dripper: '', dari: '', sampai: '', minSkor: '', sort: 'desc' },
+    radarSel: null, // array ID Seduhan/row key
+    timeBean: '', timeType: 'line',
+    compareSel: {}  // per biji: array of row keys terpilih
+  };
+  var charts = {};
+
+  function brewKey(s) { return String(!isBlank(s[S.id]) ? s[S.id] : 'r' + s._row); }
+  function $(sel, root) { return (root || document).querySelector(sel); }
+
+  function destroyCharts() {
+    Object.keys(charts).forEach(function (k) { try { charts[k].destroy(); } catch (e) {} });
+    charts = {};
+  }
+
+  function chartsAvailable() { return typeof Chart !== 'undefined'; }
+  function chartMissing() {
+    return '<div class="empty"><b>Grafik tidak dapat dimuat</b>Library Chart.js (CDN) belum termuat. Periksa koneksi internet lalu muat ulang.</div>';
+  }
+
+  /* ---------- komponen kecil ---------- */
+  function emptyBox(title, text) { return '<div class="empty"><b>' + esc(title) + '</b>' + esc(text) + '</div>'; }
+
+  function noDataAtAll() {
+    return emptyBox('Belum ada data', 'Tab "Biji" dan "Seduhan" masih kosong. Isi baris pertama di bawah header pada Google Sheet, lalu muat ulang halaman ini.');
+  }
+
+  function scoreBadge(sc) {
+    return '<div class="score ' + scoreClass(sc) + '" title="Skor keseluruhan">' + (isNum(sc) ? esc(fmtNum(sc, 1)) : '–') + '</div>';
+  }
+
+  function brewCard(s) {
+    var bean = state.idx[s[S.biji]];
+    var chips = [];
+    if (!isBlank(s[S.dripper])) chips.push(s[S.dripper]);
+    if (isNum(s[S.dosis]) && isNum(s[S.airTotal])) chips.push(fmtNum(s[S.dosis], 1) + ' g / ' + fmtNum(s[S.airTotal], 0) + ' g');
+    if (!isBlank(s[S.rasio])) chips.push('Rasio ' + s[S.rasio]);
+    if (isNum(s[S.suhu])) chips.push(fmtNum(s[S.suhu], 0) + '°C');
+    if (!isBlank(s[S.grind])) chips.push('Grind ' + s[S.grind]);
+    if (!isBlank(s[S.waktu])) chips.push('⏱ ' + s[S.waktu]);
+    if (isNum(s[S.hari])) chips.push('H+' + s[S.hari]);
+    var href = bean ? '#/biji/' + encodeURIComponent(s[S.biji]) : '#/seduhan';
+    return '<a class="brew" href="' + href + '"><div class="h"><div><div class="t">' + esc(beanLabel(bean, s[S.biji])) + '</div>' +
+      '<div class="meta">' + esc(fmtDate(s[S.tanggal]) || 'Tanggal tidak diisi') +
+      (isBlank(s[S.id]) ? '' : ' · #' + esc(s[S.id])) +
+      (bean && !isBlank(bean[B.roastery]) ? ' · ' + esc(bean[B.roastery]) : '') + '</div></div>' + scoreBadge(s[S.skor]) + '</div>' +
+      (chips.length ? '<div class="params">' + chips.map(function (c) { return '<span class="chip">' + esc(c) + '</span>'; }).join('') + '</div>' : '') +
+      (!isBlank(s[S.deskriptor]) ? '<div class="notes">' + esc(s[S.deskriptor]) + '</div>' : '') +
+      (!isBlank(s[S.tweak]) ? '<div class="notes muted small">➜ Tweak: ' + esc(s[S.tweak]) + '</div>' : '') +
+      '</a>';
+  }
+
+  /* ---------- halaman: ringkasan ---------- */
+  function renderHome() {
+    var d = state.data, sum = summarize(d);
+    var h = '<h2>Ringkasan</h2>';
+    h += '<div class="cards">' +
+      stat('Total seduhan', sum.totalSeduhan, '') +
+      stat('Total biji', sum.totalBiji, '') +
+      stat('Rata-rata skor', sum.rataSkor === null ? '–' : fmtNum(sum.rataSkor, 2), sum.jumlahBerskor ? 'dari ' + sum.jumlahBerskor + ' seduhan bernilai (skala 10)' : 'belum ada skor') +
+      stat('Seduhan terbaik', sum.terbaik ? fmtNum(sum.terbaik[S.skor], 1) : '–',
+        sum.terbaik ? beanLabel(sum.terbaikBiji, sum.terbaik[S.biji]) + ' · ' + fmtDate(sum.terbaik[S.tanggal]) : 'belum ada skor') +
+      '</div>';
+    if (!d.seduhan.length && !d.biji.length) {
+      app.innerHTML = h + noDataAtAll();
+      return;
+    }
+    h += '<div class="panel"><h3>Skor dari waktu ke waktu</h3>' +
+      (chartsAvailable() ? '<div class="chartbox sm"><canvas id="homeTime"></canvas></div>' : chartMissing()) + '</div>';
+    h += '<h3>Seduhan terbaru</h3>';
+    var recent = sortBrews(d.seduhan, 'desc').slice(0, 5);
+    h += recent.length ? '<div class="list">' + recent.map(brewCard).join('') + '</div>' +
+      '<p><a class="btn ghost" href="#/seduhan">Lihat semua seduhan</a></p>'
+      : emptyBox('Belum ada seduhan', 'Tambahkan seduhan pertama di tab "Seduhan".');
+    app.innerHTML = h;
+    if (chartsAvailable() && d.seduhan.length) drawTime('homeTime', '', 'line');
+  }
+
+  function stat(lbl, val, hint) {
+    return '<div class="card stat"><div class="lbl">' + esc(lbl) + '</div><div class="val">' + esc(val) + '</div>' +
+      (hint ? '<div class="hint">' + esc(hint) + '</div>' : '') + '</div>';
+  }
+
+  /* ---------- halaman: daftar seduhan ---------- */
+  function renderSeduhan() {
+    var d = state.data, f = state.filters;
+    if (!d.seduhan.length) { app.innerHTML = '<h2>Seduhan</h2>' + emptyBox('Belum ada seduhan', 'Tab "Seduhan" masih kosong. Isi data seduhan di Google Sheet lalu muat ulang.'); return; }
+    var beanOpts = '<option value="">Semua biji</option>' + d.biji.map(function (b) {
+      var id = b[B.id];
+      return '<option value="' + esc(id) + '"' + (String(f.biji) === String(id) ? ' selected' : '') + '>' + esc(beanLabel(b)) + '</option>';
+    }).join('');
+    var dr = uniqueValues(d.seduhan, S.dripper);
+    var dripOpts = '<option value="">Semua dripper</option>' + dr.map(function (x) {
+      return '<option value="' + esc(x) + '"' + (f.dripper.toLowerCase() === x.toLowerCase() ? ' selected' : '') + '>' + esc(x) + '</option>';
+    }).join('');
+    var h = '<h2>Daftar Seduhan</h2><div class="panel"><div class="filters">' +
+      '<div><label for="fq">Cari</label><input type="search" id="fq" placeholder="Biji, notes, dripper…" value="' + esc(f.q) + '"></div>' +
+      '<div><label for="fbiji">Biji</label><select id="fbiji">' + beanOpts + '</select></div>' +
+      '<div><label for="fdrip">Dripper</label><select id="fdrip">' + dripOpts + '</select></div>' +
+      '<div><label for="fdari">Dari tanggal</label><input type="date" id="fdari" value="' + esc(f.dari) + '"></div>' +
+      '<div><label for="fsampai">Sampai tanggal</label><input type="date" id="fsampai" value="' + esc(f.sampai) + '"></div>' +
+      '<div><label for="fmin">Skor minimal</label><input type="number" id="fmin" min="1" max="10" step="0.5" placeholder="1–10" value="' + esc(f.minSkor) + '"></div>' +
+      '<div><label for="fsort">Urutan</label><select id="fsort"><option value="desc"' + (f.sort === 'desc' ? ' selected' : '') + '>Terbaru dulu</option><option value="asc"' + (f.sort === 'asc' ? ' selected' : '') + '>Terlama dulu</option><option value="skor"' + (f.sort === 'skor' ? ' selected' : '') + '>Skor tertinggi</option></select></div>' +
+      '</div><div class="row"><span class="muted small" id="fcount"></span><span class="spacer"></span><button class="ghost" id="freset" type="button">Reset filter</button></div></div>' +
+      '<div id="flist" class="list"></div>';
+    app.innerHTML = h;
+    function apply() {
+      f.q = $('#fq').value; f.biji = $('#fbiji').value; f.dripper = $('#fdrip').value;
+      f.dari = $('#fdari').value; f.sampai = $('#fsampai').value; f.minSkor = $('#fmin').value; f.sort = $('#fsort').value;
+      var res = filterBrews(d.seduhan, d.biji, f);
+      if (f.sort === 'skor') {
+        res = res.slice().sort(function (a, b) {
+          var x = isNum(a[S.skor]) ? a[S.skor] : -1, y = isNum(b[S.skor]) ? b[S.skor] : -1;
+          return y - x;
+        });
+      } else res = sortBrews(res, f.sort);
+      $('#fcount').textContent = res.length + ' dari ' + d.seduhan.length + ' seduhan';
+      $('#flist').innerHTML = res.length ? res.map(brewCard).join('') : emptyBox('Tidak ada hasil', 'Tidak ada seduhan yang cocok dengan filter. Coba ubah atau reset filter.');
+    }
+    ['fq', 'fbiji', 'fdrip', 'fdari', 'fsampai', 'fmin', 'fsort'].forEach(function (id) {
+      $('#' + id).addEventListener(id === 'fq' || id === 'fmin' ? 'input' : 'change', apply);
+    });
+    $('#freset').addEventListener('click', function () {
+      state.filters = { q: '', biji: '', dripper: '', dari: '', sampai: '', minSkor: '', sort: 'desc' };
+      renderSeduhan();
+    });
+    apply();
+  }
+
+  /* ---------- halaman: daftar biji ---------- */
+  function renderBijiList() {
+    var d = state.data;
+    if (!d.biji.length) { app.innerHTML = '<h2>Biji</h2>' + emptyBox('Belum ada biji', 'Tab "Biji" masih kosong. Tambahkan biji di Google Sheet lalu muat ulang.'); return; }
+    var items = d.biji.map(function (b) { return { b: b, st: beanStats(b, d.seduhan, state.today) }; });
+    items.sort(function (x, y) { return (parseDay(y.b[B.roast]) || 0) - (parseDay(x.b[B.roast]) || 0); });
+    var h = '<h2>Biji</h2><div class="list">' + items.map(function (it) {
+      var b = it.b, st = it.st;
+      var meta = [b[B.roastery], b[B.negara], b[B.proses]].filter(function (x) { return !isBlank(x); }).join(' · ');
+      return '<a class="brew" href="#/biji/' + encodeURIComponent(b[B.id]) + '"><div class="h"><div><div class="t">' + esc(beanLabel(b)) + '</div>' +
+        '<div class="meta">' + esc(meta || 'Tanpa keterangan') + '</div></div>' + scoreBadge(st.avgScore) + '</div>' +
+        '<div class="params"><span class="chip">' + st.count + ' seduhan</span>' +
+        (isBlank(b[B.roast]) ? '' : '<span class="chip">Roasting ' + esc(fmtDate(b[B.roast])) + '</span>') +
+        (st.ageDays !== null ? '<span class="chip">Umur ' + esc(ageText(st.ageDays)) + '</span>' : '') + '</div>' +
+        (!isBlank(b[B.flavorNotes]) ? '<div class="notes muted">' + esc(b[B.flavorNotes]) + '</div>' : '') + '</a>';
+    }).join('') + '</div>';
+    app.innerHTML = h;
+  }
+
+  /* ---------- halaman: detail biji ---------- */
+  function infoRow(label, value) {
+    if (isBlank(value)) return '';
+    return '<dt>' + esc(label) + '</dt><dd>' + esc(value) + '</dd>';
+  }
+
+  function renderBijiDetail(id) {
+    var d = state.data, bean = state.idx[id];
+    if (!bean) {
+      app.innerHTML = '<div class="crumbs"><a href="#/biji">← Semua biji</a></div>' + emptyBox('Biji tidak ditemukan', 'ID Biji "' + id + '" tidak ada di tab "Biji".');
+      return;
+    }
+    var st = beanStats(bean, d.seduhan, state.today);
+    var h = '<div class="crumbs"><a href="#/biji">← Semua biji</a></div>' +
+      '<div class="panel"><div class="beanrow"><div><h2 style="margin:0">' + esc(beanLabel(bean)) + '</h2>' +
+      '<div class="muted small">ID ' + esc(id) + (isBlank(bean[B.roastery]) ? '' : ' · ' + esc(bean[B.roastery])) + '</div></div>' + scoreBadge(st.avgScore) + '</div>' +
+      '<div class="cards" style="margin:12px 0">' +
+      stat('Umur sejak roasting', st.ageDays === null ? '–' : (st.ageDays < 0 ? '0' : st.ageDays) + ' hr', isBlank(bean[B.roast]) ? 'Tanggal roasting belum diisi' : 'Roasting ' + fmtDate(bean[B.roast])) +
+      stat('Jumlah seduhan', st.count, '') +
+      stat('Rata-rata skor', st.avgScore === null ? '–' : fmtNum(st.avgScore, 2), '') +
+      stat('Terbaik', st.best ? fmtNum(st.best[S.skor], 1) : '–', st.best ? fmtDate(st.best[S.tanggal]) : '') +
+      '</div><dl class="info">' +
+      infoRow('Negara', bean[B.negara]) + infoRow('Region / terroir', bean[B.region]) + infoRow('Farm / produsen', bean[B.farm]) +
+      infoRow('Ketinggian', isNum(bean[B.altitude]) ? fmtNum(bean[B.altitude], 0) + ' mdpl' : bean[B.altitude]) +
+      infoRow('Spesies', bean[B.spesies]) + infoRow('Varietas', bean[B.varietas]) + infoRow('Proses pasca panen', bean[B.proses]) +
+      infoRow('Profil roasting', bean[B.profil]) + infoRow('Tanggal roasting', fmtDate(bean[B.roast])) +
+      infoRow('Umur kopi', ageText(st.ageDays)) + infoRow('Tanggal beli', fmtDate(bean[B.beli])) +
+      infoRow('Berat', isNum(bean[B.berat]) ? fmtNum(bean[B.berat], 0) + ' g' : bean[B.berat]) +
+      infoRow('Harga', isNum(bean[B.harga]) ? fmtRupiah(bean[B.harga]) : bean[B.harga]) +
+      infoRow('Catatan roastery', bean[B.flavorNotes]) + infoRow('Catatan pribadi', bean[B.catatan]) +
+      '</dl></div>';
+
+    if (!st.count) {
+      app.innerHTML = h + emptyBox('Belum ada seduhan untuk biji ini', 'Tambahkan baris di tab "Seduhan" dengan ID Biji "' + id + '".');
+      return;
+    }
+
+    var sel = state.compareSel[id];
+    var keys = st.brews.map(brewKey);
+    if (!sel) sel = state.compareSel[id] = keys.slice(-4);
+    sel = sel.filter(function (k) { return keys.indexOf(k) !== -1; });
+    state.compareSel[id] = sel;
+
+    h += '<div class="panel"><h3>Bandingkan seduhan</h3><div class="muted small" style="margin-bottom:8px">Pilih seduhan yang ingin dibandingkan (urut dari terlama ke terbaru; kolom pertama = pembanding).</div><div class="row" id="pick">' +
+      st.brews.map(function (s) {
+        var k = brewKey(s), on = sel.indexOf(k) !== -1;
+        return '<span class="chip pick ' + (on ? 'on' : 'off') + '" data-k="' + esc(k) + '">' + esc((fmtDate(s[S.tanggal]) || 'tanpa tanggal') + (isBlank(s[S.id]) ? '' : ' #' + s[S.id])) + '</span>';
+      }).join('') + '</div></div>';
+
+    var chosen = st.brews.filter(function (s) { return sel.indexOf(brewKey(s)) !== -1; });
+    h += '<div class="panel"><h3>Tabel perbandingan</h3>';
+    if (!chosen.length) h += emptyBox('Belum ada yang dipilih', 'Pilih minimal satu seduhan di atas.');
+    else h += compareTable(chosen);
+    h += '</div>';
+
+    h += '<div class="grid2"><div class="panel"><h3>Radar skor SCA</h3>' +
+      (chartsAvailable() ? '<div class="chartbox"><canvas id="beanRadar"></canvas></div>' : chartMissing()) + '</div>' +
+      '<div class="panel"><h3>Skor keseluruhan</h3>' +
+      (chartsAvailable() ? '<div class="chartbox"><canvas id="beanTime"></canvas></div>' : chartMissing()) + '</div></div>';
+
+    app.innerHTML = h;
+
+    $('#pick').addEventListener('click', function (e) {
+      var t = e.target.closest ? e.target.closest('.pick') : e.target;
+      if (!t || !t.getAttribute('data-k')) return;
+      var k = t.getAttribute('data-k'), cur = state.compareSel[id], i = cur.indexOf(k);
+      if (i === -1) cur.push(k); else cur.splice(i, 1);
+      var scroll = window.pageYOffset;
+      renderBijiDetail(id);
+      window.scrollTo(0, scroll);
+    });
+    if (chartsAvailable()) {
+      drawRadar('beanRadar', chosen);
+      drawTime('beanTime', id, 'bar');
+    }
+  }
+
+  function compareTable(brews) {
+    var rows = buildCompare(brews);
+    var h = '<div class="legend"><i></i>Sel kuning = berbeda dari seduhan pertama (pembanding); angka kecil = selisih.</div>' +
+      '<div class="tablewrap"><table class="cmp"><thead><tr><th class="sticky">Parameter</th>' +
+      brews.map(function (s, i) {
+        return '<th>' + esc(fmtDate(s[S.tanggal]) || 'Tanpa tanggal') + (isBlank(s[S.id]) ? '' : '<div class="small muted">#' + esc(s[S.id]) + (i === 0 ? ' · pembanding' : '') + '</div>') + '</th>';
+      }).join('') + '</tr></thead><tbody>';
+    rows.forEach(function (r) {
+      if (r.section) { h += '<tr class="sect"><td colspan="' + (brews.length + 1) + '">' + esc(r.section) + '</td></tr>'; return; }
+      h += '<tr><td class="sticky">' + esc(r.label) + '</td>' + r.cells.map(function (c) {
+        var cls = (c.diff ? 'diff' : '') + (c.base ? ' base' : '');
+        return '<td class="' + cls + '">' + (c.text === '' ? '<span class="muted">–</span>' : esc(c.text)) +
+          (c.delta ? '<span class="delta">' + esc(c.delta) + '</span>' : '') + '</td>';
+      }).join('') + '</tr>';
+    });
+    return h + '</tbody></table></div>';
+  }
+
+  /* ---------- halaman: grafik ---------- */
+  function renderGrafik() {
+    var d = state.data;
+    if (!d.seduhan.length) { app.innerHTML = '<h2>Grafik</h2>' + emptyBox('Belum ada data seduhan', 'Grafik akan muncul setelah ada seduhan di tab "Seduhan".'); return; }
+    if (!chartsAvailable()) { app.innerHTML = '<h2>Grafik</h2>' + chartMissing(); return; }
+    var all = sortBrews(d.seduhan, 'desc');
+    if (!state.radarSel) state.radarSel = all.slice(0, 3).map(brewKey);
+    var keys = all.map(brewKey);
+    state.radarSel = state.radarSel.filter(function (k) { return keys.indexOf(k) !== -1; });
+
+    var beanOpts = '<option value="">Semua biji</option>' + d.biji.map(function (b) {
+      return '<option value="' + esc(b[B.id]) + '"' + (String(state.timeBean) === String(b[B.id]) ? ' selected' : '') + '>' + esc(beanLabel(b)) + '</option>';
+    }).join('');
+
+    var h = '<h2>Grafik</h2><div class="panel"><h3>Radar skor SCA</h3>' +
+      '<div class="muted small" style="margin-bottom:8px">Pilih hingga 6 seduhan untuk dibandingkan (skala 1–5).</div><div class="row" id="rpick">' +
+      all.map(function (s) {
+        var k = brewKey(s), on = state.radarSel.indexOf(k) !== -1;
+        var bean = state.idx[s[S.biji]];
+        return '<span class="chip pick ' + (on ? 'on' : 'off') + '" data-k="' + esc(k) + '">' + esc((fmtDate(s[S.tanggal]) || '–') + ' · ' + beanLabel(bean, s[S.biji])) + '</span>';
+      }).join('') + '</div><div class="chartbox" style="margin-top:12px"><canvas id="gRadar"></canvas></div>' +
+      '<div id="rhint" class="muted small"></div></div>' +
+      '<div class="panel"><h3>Skor keseluruhan dari waktu ke waktu</h3><div class="filters" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">' +
+      '<div><label for="tbean">Biji</label><select id="tbean">' + beanOpts + '</select></div>' +
+      '<div><label for="ttype">Jenis grafik</label><select id="ttype"><option value="line"' + (state.timeType === 'line' ? ' selected' : '') + '>Garis</option><option value="bar"' + (state.timeType === 'bar' ? ' selected' : '') + '>Batang</option></select></div></div>' +
+      '<div class="chartbox"><canvas id="gTime"></canvas></div></div>';
+    app.innerHTML = h;
+
+    function drawR() {
+      var chosen = all.filter(function (s) { return state.radarSel.indexOf(brewKey(s)) !== -1; });
+      drawRadar('gRadar', chosen);
+      $('#rhint').textContent = chosen.length ? '' : 'Pilih minimal satu seduhan untuk menampilkan radar.';
+    }
+    $('#rpick').addEventListener('click', function (e) {
+      var t = e.target.closest ? e.target.closest('.pick') : e.target;
+      if (!t || !t.getAttribute('data-k')) return;
+      var k = t.getAttribute('data-k'), i = state.radarSel.indexOf(k);
+      if (i === -1) {
+        if (state.radarSel.length >= 6) { $('#rhint').textContent = 'Maksimal 6 seduhan.'; return; }
+        state.radarSel.push(k); t.className = 'chip pick on';
+      } else { state.radarSel.splice(i, 1); t.className = 'chip pick off'; }
+      drawR();
+    });
+    function drawT() {
+      state.timeBean = $('#tbean').value; state.timeType = $('#ttype').value;
+      drawTime('gTime', state.timeBean, state.timeType);
+    }
+    $('#tbean').addEventListener('change', drawT);
+    $('#ttype').addEventListener('change', drawT);
+    drawR(); drawT();
+  }
+
+  /* ---------- Chart.js ---------- */
+  function drawRadar(canvasId, brews) {
+    var el = document.getElementById(canvasId);
+    if (!el) return;
+    if (charts[canvasId]) { charts[canvasId].destroy(); delete charts[canvasId]; }
+    if (!brews.length) return;
+    charts[canvasId] = new Chart(el, {
+      type: 'radar',
+      data: { labels: SCA.map(function (a) { return a.label; }), datasets: radarDatasets(brews, state.idx) },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: { r: { min: 0, max: 5, ticks: { stepSize: 1, backdropColor: 'transparent' }, pointLabels: { font: { size: 12 } } } },
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } }
+      }
+    });
+  }
+
+  function drawTime(canvasId, beanId, type) {
+    var el = document.getElementById(canvasId);
+    if (!el) return;
+    if (charts[canvasId]) { charts[canvasId].destroy(); delete charts[canvasId]; }
+    var ser = scoreSeries(state.data.seduhan, state.idx, beanId);
+    if (!ser.labels.length) {
+      var p = el.parentNode;
+      p.innerHTML = emptyBox('Belum ada skor', 'Isi kolom "Skor Keseluruhan (1-10)" pada seduhan agar grafik muncul.');
+      return;
+    }
+    var isBar = type === 'bar';
+    charts[canvasId] = new Chart(el, {
+      type: isBar ? 'bar' : 'line',
+      data: {
+        labels: ser.labels,
+        datasets: ser.datasets.map(function (ds) {
+          return isBar ? ds : Object.assign({ tension: 0.25, spanGaps: true, pointRadius: 4, fill: false }, ds);
+        })
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: {
+          y: { min: 0, max: 10, title: { display: true, text: 'Skor (1–10)' }, stacked: isBar },
+          x: { stacked: isBar, ticks: { maxRotation: 60, autoSkip: true } }
+        },
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } }
+      }
+    });
+  }
+
+  /* ---------- router ---------- */
+  function route() {
+    destroyCharts();
+    var hash = (location.hash || '#/').replace(/^#/, '');
+    var parts = hash.split('/').filter(Boolean);
+    var r = parts[0] || 'home';
+    var links = document.querySelectorAll('#nav a');
+    for (var i = 0; i < links.length; i++) {
+      links[i].className = links[i].getAttribute('data-r') === r ? 'active' : '';
+    }
+    if (!state.data) return;
+    window.scrollTo(0, 0);
+    try {
+      if (r === 'seduhan') renderSeduhan();
+      else if (r === 'biji' && parts[1]) renderBijiDetail(decodeURIComponent(parts[1]));
+      else if (r === 'biji') renderBijiList();
+      else if (r === 'grafik') renderGrafik();
+      else renderHome();
+    } catch (err) { showError(err); }
+  }
+
+  function showError(err) {
+    var msg = err && err.message ? err.message : String(err);
+    app.innerHTML = '<div class="error"><b>Gagal menampilkan data.</b><br>' + esc(msg) +
+      '</div><button type="button" onclick="location.reload()">Muat ulang</button>';
+  }
+
+  function onData(data) {
+    data = data || {};
+    data.biji = data.biji || [];
+    data.seduhan = data.seduhan || [];
+    data.meta = data.meta || {};
+    state.data = data;
+    state.idx = indexBiji(data.biji);
+    state.today = data.meta.today || new Date().toISOString().slice(0, 10);
+    var sub = document.getElementById('subtitle');
+    sub.textContent = (data.meta.spreadsheetName ? data.meta.spreadsheetName + ' · ' : '') + 'dashboard baca-saja';
+    if (data.meta.warnings && data.meta.warnings.length) {
+      route();
+      app.insertAdjacentHTML('afterbegin', '<div class="warn">' + data.meta.warnings.map(esc).join('<br>') + '</div>');
+    } else route();
+  }
+
+  window.addEventListener('hashchange', route);
+
+  // Data statis: dibaca dari data.json (bentuk sama dengan keluaran getData() di Apps Script).
+  fetch('data.json?' + Date.now(), { cache: 'no-store' })
+    .then(function (r) {
+      if (!r.ok) throw new Error('Gagal memuat data.json (HTTP ' + r.status + ').');
+      return r.json();
+    })
+    .then(function (d) {
+      d = d || {};
+      d.meta = d.meta || {};
+      // "today" memakai tanggal perangkat agar umur biji selalu terkini.
+      var n = new Date();
+      d.meta.today = n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0') + '-' + String(n.getDate()).padStart(2, '0');
+      onData(d);
+    })
+    .catch(showError);
+
+  // untuk pengujian
+  window.__app = { onData: onData, state: state, route: route };
+})();
+</script>
+</body>
+</html>
