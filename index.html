@@ -7,7 +7,7 @@
    Kosong = mode baca-saja memakai data.json. Lihat backend/SETUP-id.md. */
 var BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxngokKDgK14V2TG710VxcSfnfxZr4d1eLxoTnumDapABvcdexWByZvtbjT6v8Pbc9CuQ/exec';
 </script>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Jurnal Seduh Kopi</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -161,18 +161,33 @@ fieldset:disabled{opacity:.55}
 .hbarwrap .chartbox{height:auto}
 .tog{margin:8px 0 0;text-align:center}
 @media(max-width:520px){.gstats{grid-template-columns:repeat(2,1fr)}.gstat b{font-size:22px}.seg button{padding:5px 11px}}
+
+/* Navigasi: bilah tab bawah di layar kecil */
+nav a .ic{display:none}
+@media(max-width:759px){
+  body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+  nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;overflow:visible;background:rgba(255,255,255,.97);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-top:1px solid var(--line);box-shadow:0 -4px 18px rgba(25,32,37,.08);padding:6px 8px calc(6px + env(safe-area-inset-bottom))}
+  nav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 2px;border-radius:16px;font-size:11.5px;line-height:1.2;min-width:0;min-height:52px;color:var(--muted)}
+  nav a span{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+  nav a .ic{display:block;width:22px;height:22px}
+  nav a.active{background:var(--cream);color:var(--blue-d);box-shadow:none}
+  nav a[data-r=catat]{background:var(--coral);color:#fff;box-shadow:0 3px 10px rgba(255,94,91,.4)}
+  nav a[data-r=catat]:hover{background:#ee4f4c}
+  nav a[data-r=catat].active{background:#e8423f;box-shadow:0 0 0 3px rgba(255,94,91,.3)}
+  header.top .sub{margin-bottom:2px}
+}
 </style>
 </head>
 <body>
 <header class="top">
   <h1>&#9749; Jurnal Seduh Kopi</h1>
   <div class="sub" id="subtitle">Dashboard baca-saja (read-only)</div>
-  <nav id="nav">
-    <a href="#/" data-r="home">Ringkasan</a>
-    <a href="#/seduhan" data-r="seduhan">Seduhan</a>
-    <a href="#/biji" data-r="biji">Biji</a>
-    <a href="#/grafik" data-r="grafik">Grafik</a>
-    <a href="#/catat" data-r="catat">Catat</a>
+  <nav id="nav" aria-label="Menu utama">
+    <a href="#/" data-r="home"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span>Ringkasan</span></a>
+    <a href="#/seduhan" data-r="seduhan"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V9z"/><path d="M17 11h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M8 3v3M12 3v3"/></svg><span>Seduhan</span></a>
+    <a href="#/biji" data-r="biji"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c4.5 0 8 3.5 8 9s-3.5 9-8 9-8-3.5-8-9 3.5-9 8-9z"/><path d="M12 3c-3 4 3 8 0 12s0 6 0 6"/></svg><span>Biji</span></a>
+    <a href="#/grafik" data-r="grafik"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Grafik</span></a>
+    <a href="#/catat" data-r="catat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Catat</span></a>
   </nav>
 </header>
 <div id="notice" style="max-width:1100px;margin:0 auto;padding:0 14px"></div>
