@@ -85,6 +85,13 @@ let n = 0; const ok = m => { n++; };
   assert.equal(d.seduhan[1]['Tanggal Seduh'], '2026-09-25'); assert.equal(d.biji[0]['Tanggal Roasting'], '2026-09-20'); ok();
 }
 
+// --- S06: sel tanggal yang berisi jam tidak bergeser hari (ambil bagian tanggal sesuai tulisan di sheet) ---
+{
+  const e = makeEnv(); e.seduhan.grid[2][1] = new Date(2026, 8, 30, 17, 0, 0);
+  const d = e.get({ action: 'data' });
+  assert.equal(d.seduhan[1]['Tanggal Seduh'], '2026-09-30', 'jam 17:00 tidak menggeser tanggal'); ok();
+}
+
 // --- GET data: bentuk sama dengan data.json + kolom terhitung ---
 {
   const e = makeEnv(); const d = e.get({ action: 'data' });

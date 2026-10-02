@@ -4,6 +4,7 @@ Dashboard statis jurnal seduh kopi (biji dan seduhan), di-host lewat GitHub Page
 
 - `index.html` – dashboard (tampilan responsif untuk HP). Membaca `data.json` lewat `fetch`; bila `BACKEND_URL` diisi, membaca data dari backend dan mengaktifkan halaman **Catat** (`#/catat`, isi dengan bantuan AI) serta tombol **Analisa AI**.
 - `backend/` – Google Apps Script web app (`Code.gs`, `appsscript.json`) + `SETUP-id.md` (cara pasang). Fitur AI memakai gateway OpenAI-compatible (default Sumopod, `AI_BASE_URL`); `ANTHROPIC_API_KEY` langsung tetap opsi. Rahasia (`AI_API_KEY`, `APP_PIN`) hanya di Script Properties.
+- `manifest.json`, `icons/`, `apple-touch-icon.png` – metadata PWA/ikon (favicon cangkir kopi disematkan di `index.html`).
 - `data.json` – data biji dan seduhan, bentuknya sama dengan keluaran `getData()` di Apps Script (`biji`, `seduhan`, `meta`).
 
 ## Memperbarui data

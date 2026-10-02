@@ -9,6 +9,13 @@ var BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxngokKDgK14V2TG710Vx
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Jurnal Seduh Kopi</title>
+<meta name="theme-color" content="#00aff1">
+<meta name="description" content="Jurnal seduhan kopi pribadi: catatan seduhan, beans, grafik, dan analisa AI.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2300aff1'/%3E%3Cpath d='M14 26h30v12a12 12 0 0 1-12 12h-6a12 12 0 0 1-12-12z' fill='%23fff'/%3E%3Cpath d='M44 29h3a6 6 0 0 1 0 12h-4' fill='none' stroke='%23fff' stroke-width='4' stroke-linecap='round'/%3E%3Cpath d='M23 10v9M31 10v9M39 10v9' stroke='%23fff' stroke-width='3.5' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Jurnal Kopi">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=DM+Sans:opsz,wght@9..40,400..700&display=swap">
@@ -16,9 +23,9 @@ var BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxngokKDgK14V2TG710Vx
 :root{
   /* Palet gaya Ko-fi: biru langit, koral, mint, kuning; teks mirage gelap */
   --bg:#effaff; --card:#ffffff; --ink:#192025; --muted:#5f6f7a; --line:#dce7eb;
-  --brown:#467ceb; --brown-d:#192025; --caramel:#ffb520; --cream:#def3ff; --accent:#305de0;
-  --blue:#00aff1; --blue-d:#0072ab; --coral:#ff5e5b;
-  --diff:#fff1c6; --diff-b:#ffb520; --good:#1fa57f; --bad:#e8423f;
+  --brown:#0072ab; --brown-d:#192025; --caramel:#ffb520; --cream:#def3ff; --accent:#305de0;
+  --blue:#00aff1; --blue-d:#0072ab; --coral:#d6322f;
+  --diff:#fff1c6; --diff-b:#ffb520; --good:#147a5c; --bad:#c9302c;
   --display:"Bricolage Grotesque","DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; --r:24px; --r-sm:14px; --shadow:0 4px 18px rgba(25,32,37,.07);
 }
 *{box-sizing:border-box}
@@ -31,7 +38,7 @@ nav{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;paddin
 nav::-webkit-scrollbar{display:none}
 nav a{color:var(--ink);text-decoration:none;padding:8px 16px;border-radius:999px;font-family:var(--display);font-weight:700;white-space:nowrap;font-size:14.5px;letter-spacing:-.01em;background:transparent;transition:background .15s,color .15s}
 nav a:hover{background:var(--cream)}
-nav a.active{background:var(--blue);color:#fff;box-shadow:0 2px 8px rgba(0,175,241,.35)}
+nav a.active{background:var(--blue-d);color:#fff;box-shadow:0 2px 8px rgba(0,114,171,.35)}
 main{max-width:1100px;margin:0 auto;padding:20px 14px 56px}
 h2{font-family:var(--display);font-size:32px;font-weight:800;margin:6px 0 16px;color:var(--ink);letter-spacing:-.04em;line-height:1.08}
 h3{font-family:var(--display);font-size:18px;font-weight:700;margin:0 0 10px;color:var(--ink);letter-spacing:-.02em;line-height:1.25}
@@ -43,13 +50,13 @@ h3{font-family:var(--display);font-size:18px;font-weight:700;margin:0 0 10px;col
 .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:18px;box-shadow:var(--shadow)}
 .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px}
 .filters label{font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.08em}
-input,select,button{font:inherit}
-input[type=text],input[type=search],input[type=date],input[type=number],input[type=password],textarea,select{width:100%;padding:9px 14px;border:1.5px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);min-height:42px;transition:border-color .15s,box-shadow .15s}
+input,select,button,textarea{font:inherit}
+input[type=text],input[type=search],input[type=date],input[type=number],input[type=password],textarea,select{width:100%;padding:9px 14px;border:1.5px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);min-height:44px;font-size:16px;transition:border-color .15s,box-shadow .15s}
 input:focus,select:focus,textarea:focus{outline:0;border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,175,241,.2)}
-button,.btn{background:var(--brown);color:#fff;border:0;border-radius:999px;padding:9px 20px;cursor:pointer;font-family:var(--display);font-weight:700;letter-spacing:-.01em;min-height:42px;text-decoration:none;display:inline-block;transition:background .15s,transform .05s}
-button:hover,.btn:hover{background:#305de0}
+button,.btn{background:var(--brown);color:#fff;border:0;border-radius:999px;padding:9px 20px;cursor:pointer;font-family:var(--display);font-weight:700;letter-spacing:-.01em;min-height:44px;text-decoration:none;display:inline-block;transition:background .15s,transform .05s}
+button:hover,.btn:hover{background:#005a87}
 button:active,.btn:active{transform:translateY(1px)}
-button.ghost,.btn.ghost{background:transparent;color:var(--brown);border:1.5px solid var(--brown)}
+button.ghost,.btn.ghost{background:transparent;color:var(--blue-d);border:1.5px solid var(--blue-d)}
 button.ghost:hover,.btn.ghost:hover{background:var(--cream)}
 button:disabled{opacity:.5;cursor:default}
 .muted{color:var(--muted)}
@@ -71,12 +78,12 @@ button:disabled{opacity:.5;cursor:default}
 .brew .meta{font-size:13px;color:var(--muted);margin-top:2px}
 .brew .params{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .brew .notes{margin-top:10px;font-size:13.5px}
-.score{min-width:48px;text-align:center;border-radius:999px;padding:4px 10px;font-family:var(--display);font-weight:800;color:#fff;background:var(--blue);font-size:18px;letter-spacing:-.02em;font-variant-numeric:tabular-nums lining-nums;flex:none}
-.score.hi{background:var(--good)} .score.mid{background:var(--caramel);color:#461602} .score.lo{background:var(--coral)} .score.na{background:#b4b4b4}
+.score{min-width:48px;text-align:center;border-radius:999px;padding:4px 10px;font-family:var(--display);font-weight:800;color:#fff;background:var(--blue-d);font-size:18px;letter-spacing:-.02em;font-variant-numeric:tabular-nums lining-nums;flex:none}
+.score.hi{background:var(--good)} .score.mid{background:var(--caramel);color:#461602} .score.lo{background:var(--coral)} .score.na{background:#67737c}
 .chip{display:inline-block;background:var(--cream);color:var(--blue-d);border-radius:999px;padding:3px 11px;font-size:12px;font-weight:600}
 .chip.pick{cursor:pointer;border:1.5px solid var(--line);background:#fff;color:var(--ink);padding:6px 13px;user-select:none}
 .chip.pick:hover{border-color:var(--blue)}
-.chip.pick.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.chip.pick.on{background:var(--blue-d);color:#fff;border-color:var(--blue-d)}
 .chip.pick.off{opacity:.55}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
 .chartbox{position:relative;height:340px}
@@ -97,18 +104,18 @@ table.cmp td.base{color:var(--muted)}
 .legend{font-size:12.5px;color:var(--muted);margin:6px 0 8px}
 .legend i{display:inline-block;width:14px;height:12px;background:var(--diff);border-left:3px solid var(--diff-b);vertical-align:middle;margin-right:4px}
 .crumbs{margin-bottom:12px;font-size:13.5px;font-weight:600}
-.crumbs a{color:var(--brown)}
+.crumbs a{color:var(--accent)}
 a{color:var(--accent)}
 .beanrow{display:flex;gap:12px;align-items:center;justify-content:space-between}
 
-textarea{border-radius:var(--r-sm);min-height:120px;resize:vertical;line-height:1.5;display:block}
+textarea{border-radius:var(--r-sm);min-height:120px;resize:vertical;line-height:1.5;display:block;font:inherit;font-size:16px}
 button.sm,.btn.sm{padding:5px 14px;min-height:34px;font-size:13px}
 button.ai{background:var(--blue-d)} button.ai:hover{background:#005a87}
 button.ai.ghost{background:transparent;color:var(--blue-d);border:1.5px solid var(--blue-d)} button.ai.ghost:hover{background:var(--cream)}
 .brew .bmain{display:block;color:inherit;text-decoration:none}
 .brew .bfoot{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:10px}
 .brew .btweak{flex:1 1 200px;min-width:0;font-size:13px;color:var(--muted);overflow-wrap:anywhere}
-.brew .bfoot button{margin-left:auto;flex:none}
+.brew .bfoot>button{margin-left:auto;flex:none}
 .brew .bai:empty{display:none}
 .brew .bai .inl{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
 .brew .bai .inl h3{font-size:16px}
@@ -117,8 +124,16 @@ button.ai.ghost{background:transparent;color:var(--blue-d);border:1.5px solid va
 .field.wide{grid-column:1/-1}
 .field.ai input,.field.ai select,.field.ai textarea{background:#f3fbff;border-color:var(--blue)}
 .field .hint{font-size:11.5px;color:var(--muted);margin-top:3px}
-.check{display:flex;gap:8px;align-items:center;font-size:13.5px;margin-top:8px}
-.check input{width:18px;height:18px;accent-color:var(--blue)}
+.check{display:flex;width:fit-content;max-width:100%;gap:10px;align-items:center;font-size:13.5px;margin-top:8px;min-height:44px;cursor:pointer}
+.check input{width:24px;height:24px;flex:none;margin:0;accent-color:var(--blue-d)}
+.ferr{color:var(--bad);font-size:12.5px;font-weight:600;margin-top:4px}
+.field.invalid input,.field.invalid select{border-color:var(--bad)}
+.dhint{font-size:11.5px;color:var(--muted);margin:3px 0 0 4px}
+.pgmore{text-align:center;margin:14px 0 4px}
+.bbtns{margin-left:auto;display:flex;gap:8px;flex:none}
+.bbtns button{margin-left:0}
+.lead{margin:-8px 0 14px;color:var(--muted)}
+.ownerline{margin:-8px 0 14px;padding:8px 14px;background:var(--cream);border-radius:var(--r-sm);color:var(--ink);font-size:13.5px}
 .ok{background:#e3f8f0;border:1px solid #8fdcc2;color:#0d5a43;border-radius:var(--r-sm);padding:12px 14px;margin-bottom:12px}
 .setup{background:#fffaeb;border:1px dashed #ffb520;border-radius:var(--r);padding:16px;margin-bottom:16px}
 .setup code{background:#fff;border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:13px}
@@ -155,7 +170,7 @@ fieldset:disabled{opacity:.55}
 .seg.wrap{flex-wrap:wrap;border-radius:18px;margin-bottom:10px}
 .seg button{background:transparent;color:var(--ink);border:0;min-height:34px;padding:5px 14px;font-size:13.5px;border-radius:999px}
 .seg button:hover{background:#fff}
-.seg button.on{background:var(--blue);color:#fff;box-shadow:0 2px 6px rgba(0,175,241,.35)}
+.seg button.on{background:var(--blue-d);color:#fff;box-shadow:0 2px 6px rgba(0,114,171,.35)}
 .gstats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
 .gstat{background:var(--card);border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 14px;box-shadow:var(--shadow);min-width:0}
 .gstat b{display:block;font-family:var(--display);font-size:26px;font-weight:800;color:var(--blue-d);line-height:1.1;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
@@ -167,6 +182,15 @@ fieldset:disabled{opacity:.55}
 .tog{margin:8px 0 0;text-align:center}
 @media(max-width:520px){.gstats{grid-template-columns:repeat(2,1fr)}.gstat b{font-size:22px}.seg button{padding:5px 11px}}
 
+/* Target sentuh >=44px di layar kecil / layar sentuh */
+@media(max-width:759px),(pointer:coarse){
+  button.sm,.btn.sm{min-height:44px;padding:8px 16px}
+  .seg button{min-height:44px;padding:8px 14px}
+  .crumbs a{display:inline-flex;align-items:center;min-height:44px;padding-right:12px}
+  .chip.pick{display:inline-flex;align-items:center;min-height:44px;padding:8px 15px}
+  .tog button,.tog .btn{min-height:44px}
+}
+
 /* Navigasi: bilah tab bawah di layar kecil */
 nav a .ic{display:none}
 @media(max-width:759px){
@@ -176,9 +200,9 @@ nav a .ic{display:none}
   nav a span{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis}
   nav a .ic{display:block;width:22px;height:22px}
   nav a.active{background:var(--cream);color:var(--blue-d);box-shadow:none}
-  nav a[data-r=catat]{background:var(--coral);color:#fff;box-shadow:0 3px 10px rgba(255,94,91,.4)}
-  nav a[data-r=catat]:hover{background:#ee4f4c}
-  nav a[data-r=catat].active{background:#e8423f;box-shadow:0 0 0 3px rgba(255,94,91,.3)}
+  nav a[data-r=catat]{background:var(--coral);color:#fff;box-shadow:0 3px 10px rgba(214,50,47,.4)}
+  nav a[data-r=catat]:hover{background:#c0282a}
+  nav a[data-r=catat].active{background:#b92522;box-shadow:0 0 0 3px rgba(214,50,47,.3)}
   header.top .sub{margin-bottom:2px}
 }
 </style>
@@ -196,7 +220,7 @@ nav a .ic{display:none}
   </nav>
 </header>
 <div id="notice" style="max-width:1100px;margin:0 auto;padding:0 14px"></div>
-<main id="app"><div class="loading"><div class="spinner"></div>Memuat data dari Google Sheet&hellip;</div></main>
+<main id="app"><div class="loading"><div class="spinner"></div>Memuat data&hellip;</div></main>
 
 <!-- ===================== LOGIKA MURNI (dapat diuji di Node) ===================== -->
 <script id="logic">
@@ -385,7 +409,7 @@ function uniqueValues(list, key) {
 var COMPARE_ROWS = [
   { section: 'Seduhan' },
   { key: 'Tanggal Seduh', label: 'Tanggal', type: 'date' },
-  { key: 'Hari Sejak Roasting', label: 'Hari sejak roasting', type: 'num', unit: ' hr' },
+  { key: 'Hari Sejak Roasting', label: 'Hari sejak roasting', type: 'num', unit: ' hari' },
   { section: 'Resep & Peralatan' },
   { key: 'Dripper', label: 'Dripper', type: 'text' },
   { key: 'Kertas Filter', label: 'Kertas filter', type: 'text' },
@@ -422,6 +446,7 @@ function normForCompare(v, type) {
 function displayValue(v, row) {
   if (isBlank(v)) return '';
   if (row.type === 'date') return fmtDate(v);
+  if (row.key === 'Rasio') return fmtRasio(v);
   if (row.type === 'num' && isNum(v)) return fmtNum(v, 2) + (row.unit || '');
   return String(v);
 }
@@ -751,9 +776,9 @@ var FORM_SEDUH = [
   { col: 'Grinder', label: 'Grinder', type: 'text' },
   { col: 'Setting Grind', label: 'Setting grind', type: 'text', ph: 'mis. 24 klik' },
   { section: 'Resep' },
-  { col: 'Suhu Air (C)', label: 'Suhu air (°C)', type: 'num' },
-  { col: 'Dosis Kopi (g)', label: 'Dosis kopi (g)', type: 'num' },
-  { col: 'Air Total (g)', label: 'Air total (g)', type: 'num' },
+  { col: 'Suhu Air (C)', label: 'Suhu air (°C)', type: 'num', min: 1, max: 100 },
+  { col: 'Dosis Kopi (g)', label: 'Dosis kopi (g)', type: 'num', min: 0.1, max: 200 },
+  { col: 'Air Total (g)', label: 'Air total (g)', type: 'num', min: 1, max: 5000 },
   { col: 'Rasio', label: 'Rasio', type: 'text', ph: 'otomatis dari dosis & air', hint: 'Kosongkan agar dihitung otomatis.' },
   { col: 'Total Brew Time', label: 'Total brew time', type: 'text', ph: 'mis. 2:45' },
   { col: 'Pouring Interval (detik per langkah)', label: 'Pouring interval (waktu & gram per langkah)', type: 'text', wide: true, ph: 'mis. 0:00 bloom 40g; 0:35 100g; 1:10 100g', hint: 'Format: m:ss [label] gram per langkah, dipisah titik koma.' },
@@ -797,8 +822,40 @@ function backendUrl(base, query) {
   return base + (base.indexOf('?') === -1 ? '?' : '&') + query;
 }
 
+/** Tampilan rasio: "1:15.8" -> "1:15,8" (data tetap bertitik; hanya tampilan). */
+function fmtRasio(v) {
+  if (isBlank(v)) return '';
+  return String(v).replace(/(\d)\.(\d)/g, '$1,$2');
+}
+
+var PAGE_SIZE = 20;
+
+/** Kolom seduhan yang disalin pada "Duplikat" (tanggal = hari ini; skor & catatan dikosongkan). */
+var DUP_COLS = [FIELD.seduh.dripper, FIELD.seduh.filter, FIELD.seduh.air, FIELD.seduh.suhu, FIELD.seduh.dosis,
+  FIELD.seduh.airTotal, FIELD.seduh.grinder, FIELD.seduh.grind, FIELD.seduh.pouring];
+
+function dupDraft(brew, today) {
+  var f = {};
+  f[FIELD.seduh.tanggal] = today;
+  DUP_COLS.forEach(function (c) { if (!isBlank(brew[c])) f[c] = brew[c]; });
+  return { bean: String(brew[FIELD.seduh.biji]), source: isBlank(brew[FIELD.seduh.id]) ? '' : String(brew[FIELD.seduh.id]), seduhan: f };
+}
+
+/** Validasi satu kolom form (def dari FORM_*). Kembalikan pesan galat ('' bila sah / kosong). */
+function validateField(def, raw) {
+  var v = String(raw === undefined || raw === null ? '' : raw).trim();
+  if (v === '' || !def || def.type !== 'num') return '';
+  var n = Number(v.replace(',', '.'));
+  if (!isFinite(n)) return 'Isi dengan angka.';
+  if (def.min !== undefined && def.max !== undefined && (n < def.min || n > def.max)) {
+    return 'Isi angka ' + String(def.min).replace('.', ',') + '–' + String(def.max).replace('.', ',') + ' (sekarang ' + v.replace('.', ',') + ').';
+  }
+  return '';
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    fmtRasio: fmtRasio, PAGE_SIZE: PAGE_SIZE, DUP_COLS: DUP_COLS, dupDraft: dupDraft, validateField: validateField,
     FIELD: FIELD, SCA: SCA, esc: esc, parseDay: parseDay, daysBetween: daysBetween, fmtDate: fmtDate,
     fmtNum: fmtNum, fmtRupiah: fmtRupiah, avg: avg, summarize: summarize, filterBrews: filterBrews,
     buildCompare: buildCompare, beanStats: beanStats, ageText: ageText, radarDatasets: radarDatasets,
@@ -835,6 +892,21 @@ if (typeof module !== 'undefined' && module.exports) {
   };
   function backendOn() { return typeof BACKEND_URL === 'string' && BACKEND_URL.trim() !== ''; }
   var SETUP_HINT = 'Backend belum dipasang. Ikuti backend/SETUP-id.md lalu isi BACKEND_URL di index.html.';
+  var DOWN_HINT = 'Server jurnal belum terjangkau, jadi fitur ini dinonaktifkan sementara. Muat ulang halaman nanti.';
+  /** Fitur tulis/AI hanya aktif bila backend terpasang DAN terjangkau (bukan mode cadangan data.json). */
+  function backendUsable() { return backendOn() && state.source !== 'fallback'; }
+  function offHint() { return backendOn() ? DOWN_HINT : SETUP_HINT; }
+  function setTitle(t) { document.title = (t ? t + ' · ' : '') + 'Jurnal Seduh Kopi'; }
+  var CANVAS_NAMES = { gTrend: 'Grafik titik skor tiap seduhan dari waktu ke waktu', gBeans: 'Diagram batang skor rata-rata per beans', gDim: 'Diagram batang skor rata-rata per kelompok',
+    gRadar: 'Grafik radar profil rasa rata-rata', gAct: 'Diagram batang jumlah seduhan per periode', homeTime: 'Grafik skor seduhan dari waktu ke waktu',
+    beanRadar: 'Grafik radar skor SCA seduhan beans ini', beanTime: 'Grafik skor keseluruhan seduhan beans ini' };
+  /** Ringkasan teks untuk pembaca layar (kanvas tidak terbaca). */
+  function labelCanvas(id, summary) {
+    var c = document.getElementById(id);
+    if (!c) return;
+    var t = (CANVAS_NAMES[id] || 'Grafik') + (summary ? '. ' + summary : '');
+    c.setAttribute('role', 'img'); c.setAttribute('aria-label', t); c.textContent = t;
+  }
   function knownPin() { return state.pin || pinStore.get() || ''; }
   function setNotice(html) { var n = document.getElementById('notice'); if (n) n.innerHTML = html || ''; }
 
@@ -859,14 +931,14 @@ if (typeof module !== 'undefined' && module.exports) {
     return typeof Chart !== 'undefined';
   }
   function chartMissing() {
-    return '<div class="empty"><b>Grafik tidak dapat dimuat</b>Library Chart.js (CDN) belum termuat. Periksa koneksi internet lalu muat ulang.</div>';
+    return '<div class="empty"><b>Grafik tidak dapat dimuat</b>Grafik belum termuat. Periksa koneksi internet lalu muat ulang halaman.</div>';
   }
 
   /* ---------- komponen kecil ---------- */
   function emptyBox(title, text) { return '<div class="empty"><b>' + esc(title) + '</b>' + esc(text) + '</div>'; }
 
   function noDataAtAll() {
-    return emptyBox('Belum ada data', 'Tab "Biji" dan "Seduhan" masih kosong. Isi baris pertama di bawah header pada Google Sheet, lalu muat ulang halaman ini.');
+    return emptyBox('Belum ada data', 'Belum ada catatan seduhan atau beans. Data akan muncul di sini setelah jurnal diisi.');
   }
 
   function scoreBadge(sc) {
@@ -878,7 +950,7 @@ if (typeof module !== 'undefined' && module.exports) {
     var chips = [];
     if (!isBlank(s[S.dripper])) chips.push(s[S.dripper]);
     if (isNum(s[S.dosis]) && isNum(s[S.airTotal])) chips.push(fmtNum(s[S.dosis], 1) + ' g / ' + fmtNum(s[S.airTotal], 0) + ' g');
-    if (!isBlank(s[S.rasio])) chips.push('Rasio ' + s[S.rasio]);
+    if (!isBlank(s[S.rasio])) chips.push('Rasio ' + fmtRasio(s[S.rasio]));
     if (isNum(s[S.suhu])) chips.push(fmtNum(s[S.suhu], 0) + '°C');
     if (!isBlank(s[S.grind])) chips.push('Grind ' + s[S.grind]);
     if (!isBlank(s[S.waktu])) chips.push('⏱ ' + s[S.waktu]);
@@ -892,15 +964,23 @@ if (typeof module !== 'undefined' && module.exports) {
       (!isBlank(s[S.deskriptor]) ? '<div class="notes">' + esc(s[S.deskriptor]) + '</div>' : '') +
       '</a><div class="bfoot">' +
       (!isBlank(s[S.tweak]) ? '<span class="btweak">➜ Tweak: ' + esc(s[S.tweak]) + '</span>' : '') +
+      '<span class="bbtns">' + dupButton(s) +
       aiButton(isBlank(s[S.id]) ? { bean: s[S.biji] } : { brew: s[S.id] }, 'Analisa AI') +
-      '</div><div class="bai"></div></div>';
+      '</span></div><div class="bai"></div></div>';
+  }
+
+  function dupButton(s) {
+    if (isBlank(s[S.id]) || !state.idx[s[S.biji]]) return '';
+    var on = backendUsable();
+    return '<button type="button" class="sm ghost" data-dup="' + esc(s[S.id]) + '"' +
+      (on ? ' title="Salin parameter seduhan ini ke form Catat"' : ' disabled title="' + esc(offHint()) + '"') + '>⎘ Duplikat</button>';
   }
 
   function aiButton(target, label) {
-    var on = backendOn();
+    var on = backendUsable();
     return '<button type="button" class="sm ai ghost" data-ai="1"' +
       (target.brew ? ' data-brew="' + esc(target.brew) + '"' : '') + (target.bean ? ' data-bean="' + esc(target.bean) + '"' : '') +
-      (on ? '' : ' disabled title="' + esc(SETUP_HINT) + '"') + '>✨ ' + esc(label) + '</button>';
+      (on ? '' : ' disabled title="' + esc(offHint()) + '"') + '>✨ ' + esc(label) + '</button>';
   }
 
   /* ---------- halaman: ringkasan ---------- */
@@ -910,7 +990,7 @@ if (typeof module !== 'undefined' && module.exports) {
     h += '<div class="cards">' +
       stat('Total seduhan', sum.totalSeduhan, '') +
       stat('Total beans', sum.totalBiji, '') +
-      stat('Rata-rata skor', sum.rataSkor === null ? '–' : fmtNum(sum.rataSkor, 2), sum.jumlahBerskor ? 'dari ' + sum.jumlahBerskor + ' seduhan bernilai (skala 10)' : 'belum ada skor') +
+      stat('Rata-rata skor', sum.rataSkor === null ? '–' : fmtNum(sum.rataSkor, 1), sum.jumlahBerskor ? 'dari ' + sum.jumlahBerskor + ' seduhan bernilai (skala 10)' : 'belum ada skor') +
       stat('Seduhan terbaik', sum.terbaik ? fmtNum(sum.terbaik[S.skor], 1) : '–',
         sum.terbaik ? beanLabel(sum.terbaikBiji, sum.terbaik[S.biji]) + ' · ' + fmtDate(sum.terbaik[S.tanggal]) : 'belum ada skor') +
       '</div>';
@@ -924,7 +1004,7 @@ if (typeof module !== 'undefined' && module.exports) {
     var recent = sortBrews(d.seduhan, 'desc').slice(0, 5);
     h += recent.length ? '<div class="list">' + recent.map(brewCard).join('') + '</div>' +
       '<p><a class="btn ghost" href="#/seduhan">Lihat semua seduhan</a></p>'
-      : emptyBox('Belum ada seduhan', 'Tambahkan seduhan pertama di tab "Seduhan".');
+      : emptyBox('Belum ada seduhan', 'Seduhan akan muncul di sini setelah dicatat.');
     app.innerHTML = h;
     if (chartsAvailable() && d.seduhan.length) drawTrend('homeTime', d.seduhan);
   }
@@ -937,7 +1017,7 @@ if (typeof module !== 'undefined' && module.exports) {
   /* ---------- halaman: daftar seduhan ---------- */
   function renderSeduhan() {
     var d = state.data, f = state.filters;
-    if (!d.seduhan.length) { app.innerHTML = '<h2>Seduhan</h2>' + emptyBox('Belum ada seduhan', 'Tab "Seduhan" masih kosong. Isi data seduhan di Google Sheet lalu muat ulang.'); return; }
+    if (!d.seduhan.length) { app.innerHTML = '<h2>Seduhan</h2>' + emptyBox('Belum ada seduhan', 'Seduhan akan muncul di sini setelah dicatat.'); return; }
     var beanOpts = '<option value="">Semua beans</option>' + d.biji.map(function (b) {
       var id = b[B.id];
       return '<option value="' + esc(id) + '"' + (String(f.biji) === String(id) ? ' selected' : '') + '>' + esc(beanLabel(b)) + '</option>';
@@ -957,18 +1037,42 @@ if (typeof module !== 'undefined' && module.exports) {
       '</div><div class="row"><span class="muted small" id="fcount"></span><span class="spacer"></span><button class="ghost" id="freset" type="button">Reset filter</button></div></div>' +
       '<div id="flist" class="list"></div>';
     app.innerHTML = h;
+    var res = [], shown = PAGE_SIZE;
+    function cardsFrom(a, b) { return res.slice(a, b).map(brewCard).join(''); }
+    function moreBtn() {
+      return res.length > shown ? '<div class="pgmore"><button type="button" class="ghost" id="fmore">Tampilkan lebih banyak (' + (res.length - shown) + ' lagi)</button></div>' : '';
+    }
+    function count() {
+      $('#fcount').textContent = res.length + ' dari ' + d.seduhan.length + ' seduhan' + (res.length > shown ? ' · menampilkan ' + shown : '');
+    }
+    function paint() {
+      $('#flist').innerHTML = res.length ? cardsFrom(0, shown) + moreBtn() : emptyBox('Tidak ada hasil', 'Tidak ada seduhan yang cocok dengan filter. Coba ubah atau reset filter.');
+      count();
+    }
+    $('#flist').addEventListener('click', function (e) {
+      var b = e.target.closest ? e.target.closest('#fmore') : null;
+      if (!b) return;
+      var from = shown;
+      shown = Math.min(res.length, shown + PAGE_SIZE);
+      var holder = b.parentNode; holder.parentNode.removeChild(holder);
+      $('#flist').insertAdjacentHTML('beforeend', cardsFrom(from, shown) + moreBtn());
+      count();
+      var first = $('#flist').querySelectorAll('.brew')[from];
+      var link = first && first.querySelector('.bmain');
+      if (link && link.focus) link.focus({ preventScroll: false });
+    });
     function apply() {
+      shown = PAGE_SIZE;
       f.q = $('#fq').value; f.biji = $('#fbiji').value; f.dripper = $('#fdrip').value;
       f.dari = $('#fdari').value; f.sampai = $('#fsampai').value; f.minSkor = $('#fmin').value; f.sort = $('#fsort').value;
-      var res = filterBrews(d.seduhan, d.biji, f);
+      res = filterBrews(d.seduhan, d.biji, f);
       if (f.sort === 'skor') {
         res = res.slice().sort(function (a, b) {
           var x = isNum(a[S.skor]) ? a[S.skor] : -1, y = isNum(b[S.skor]) ? b[S.skor] : -1;
           return y - x;
         });
       } else res = sortBrews(res, f.sort);
-      $('#fcount').textContent = res.length + ' dari ' + d.seduhan.length + ' seduhan';
-      $('#flist').innerHTML = res.length ? res.map(brewCard).join('') : emptyBox('Tidak ada hasil', 'Tidak ada seduhan yang cocok dengan filter. Coba ubah atau reset filter.');
+      paint();
     }
     ['fq', 'fbiji', 'fdrip', 'fdari', 'fsampai', 'fmin', 'fsort'].forEach(function (id) {
       $('#' + id).addEventListener(id === 'fq' || id === 'fmin' ? 'input' : 'change', apply);
@@ -977,13 +1081,14 @@ if (typeof module !== 'undefined' && module.exports) {
       state.filters = { q: '', biji: '', dripper: '', dari: '', sampai: '', minSkor: '', sort: 'desc' };
       renderSeduhan();
     });
+    enhanceDates();
     apply();
   }
 
   /* ---------- halaman: daftar biji ---------- */
   function renderBijiList() {
     var d = state.data;
-    if (!d.biji.length) { app.innerHTML = '<h2>Beans</h2>' + emptyBox('Belum ada beans', 'Tab "Biji" masih kosong. Tambahkan beans di Google Sheet lalu muat ulang.'); return; }
+    if (!d.biji.length) { app.innerHTML = '<h2>Beans</h2>' + emptyBox('Belum ada beans', 'Beans akan muncul di sini setelah ditambahkan ke jurnal.'); return; }
     var items = d.biji.map(function (b) { return { b: b, st: beanStats(b, d.seduhan, state.today) }; });
     items.sort(function (x, y) { return (parseDay(y.b[B.roast]) || 0) - (parseDay(x.b[B.roast]) || 0); });
     var h = '<h2>Beans</h2><div class="list">' + items.map(function (it) {
@@ -1008,33 +1113,33 @@ if (typeof module !== 'undefined' && module.exports) {
   function renderBijiDetail(id) {
     var d = state.data, bean = state.idx[id];
     if (!bean) {
-      app.innerHTML = '<div class="crumbs"><a href="#/biji">← Semua beans</a></div>' + emptyBox('Beans tidak ditemukan', 'ID Biji "' + id + '" tidak ada di tab "Biji".');
+      app.innerHTML = '<div class="crumbs"><a href="#/biji">← Semua beans</a></div>' + emptyBox('Beans tidak ditemukan', 'Beans dengan ID "' + esc(id) + '" tidak ada di jurnal.');
       return;
     }
     var st = beanStats(bean, d.seduhan, state.today);
+    setTitle(beanLabel(bean) + ' · Beans');
     var h = '<div class="crumbs"><a href="#/biji">← Semua beans</a></div>' +
       '<div class="panel"><div class="beanrow"><div><h2 style="margin:0">' + esc(beanLabel(bean)) + '</h2>' +
       '<div class="muted small">ID ' + esc(id) + (isBlank(bean[B.roastery]) ? '' : ' · ' + esc(bean[B.roastery])) + '</div></div>' + scoreBadge(st.avgScore) + '</div>' +
       '<div class="row" style="margin-top:10px">' + aiButton({ bean: id }, 'Analisa AI beans ini') +
-      (backendOn() ? '' : '<span class="muted small">' + esc(SETUP_HINT) + '</span>') + '</div>' +
+      (backendUsable() ? '' : '<span class="muted small">' + esc(offHint()) + '</span>') + '</div>' +
       '<div class="cards" style="margin:12px 0">' +
-      stat('Umur sejak roasting', st.ageDays === null ? '–' : (st.ageDays < 0 ? '0' : st.ageDays) + ' hr', isBlank(bean[B.roast]) ? 'Tanggal roasting belum diisi' : 'Roasting ' + fmtDate(bean[B.roast])) +
+      stat('Umur sejak roasting', st.ageDays === null ? '–' : (st.ageDays < 0 ? '0' : st.ageDays) + ' hari', isBlank(bean[B.roast]) ? 'Tanggal roasting belum diisi' : 'Roasting ' + fmtDate(bean[B.roast])) +
       stat('Jumlah seduhan', st.count, '') +
-      stat('Rata-rata skor', st.avgScore === null ? '–' : fmtNum(st.avgScore, 2), '') +
+      stat('Rata-rata skor', st.avgScore === null ? '–' : fmtNum(st.avgScore, 1), '') +
       stat('Terbaik', st.best ? fmtNum(st.best[S.skor], 1) : '–', st.best ? fmtDate(st.best[S.tanggal]) : '') +
       '</div><dl class="info">' +
       infoRow('Negara', bean[B.negara]) + infoRow('Region / terroir', bean[B.region]) + infoRow('Farm / produsen', bean[B.farm]) +
       infoRow('Ketinggian', isNum(bean[B.altitude]) ? fmtNum(bean[B.altitude], 0) + ' mdpl' : bean[B.altitude]) +
       infoRow('Spesies', bean[B.spesies]) + infoRow('Varietas', bean[B.varietas]) + infoRow('Proses pasca panen', bean[B.proses]) +
-      infoRow('Profil roasting', bean[B.profil]) + infoRow('Tanggal roasting', fmtDate(bean[B.roast])) +
-      infoRow('Umur kopi', ageText(st.ageDays)) + infoRow('Tanggal beli', fmtDate(bean[B.beli])) +
+      infoRow('Profil roasting', bean[B.profil]) + infoRow('Tanggal beli', fmtDate(bean[B.beli])) +
       infoRow('Berat', isNum(bean[B.berat]) ? fmtNum(bean[B.berat], 0) + ' g' : bean[B.berat]) +
       infoRow('Harga', isNum(bean[B.harga]) ? fmtRupiah(bean[B.harga]) : bean[B.harga]) +
       infoRow('Catatan roastery', bean[B.flavorNotes]) + infoRow('Catatan pribadi', bean[B.catatan]) +
       '</dl></div>';
 
     if (!st.count) {
-      app.innerHTML = h + emptyBox('Belum ada seduhan untuk beans ini', 'Tambahkan baris di tab "Seduhan" dengan ID Biji "' + id + '".');
+      app.innerHTML = h + emptyBox('Belum ada seduhan untuk beans ini', 'Seduhan untuk beans ini akan muncul di sini setelah dicatat.');
       return;
     }
 
@@ -1047,7 +1152,7 @@ if (typeof module !== 'undefined' && module.exports) {
     h += '<div class="panel"><h3>Bandingkan seduhan</h3><div class="muted small" style="margin-bottom:8px">Pilih seduhan yang ingin dibandingkan (urut dari terlama ke terbaru; kolom pertama = pembanding).</div><div class="row" id="pick">' +
       st.brews.map(function (s) {
         var k = brewKey(s), on = sel.indexOf(k) !== -1;
-        return '<span class="chip pick ' + (on ? 'on' : 'off') + '" data-k="' + esc(k) + '">' + esc((fmtDate(s[S.tanggal]) || 'tanpa tanggal') + (isBlank(s[S.id]) ? '' : ' #' + s[S.id])) + '</span>';
+        return '<span class="chip pick ' + (on ? 'on' : 'off') + '" role="checkbox" aria-checked="' + on + '" tabindex="0" data-k="' + esc(k) + '">' + esc((fmtDate(s[S.tanggal]) || 'tanpa tanggal') + (isBlank(s[S.id]) ? '' : ' #' + s[S.id])) + '</span>';
       }).join('') + '</div></div>';
 
     var chosen = st.brews.filter(function (s) { return sel.indexOf(brewKey(s)) !== -1; });
@@ -1063,7 +1168,7 @@ if (typeof module !== 'undefined' && module.exports) {
 
     app.innerHTML = h;
 
-    $('#pick').addEventListener('click', function (e) {
+    function togglePick(e) {
       var t = e.target.closest ? e.target.closest('.pick') : e.target;
       if (!t || !t.getAttribute('data-k')) return;
       var k = t.getAttribute('data-k'), cur = state.compareSel[id], i = cur.indexOf(k);
@@ -1071,10 +1176,15 @@ if (typeof module !== 'undefined' && module.exports) {
       var scroll = window.pageYOffset;
       renderBijiDetail(id);
       window.scrollTo(0, scroll);
-    });
+      var again = app.querySelector('.pick[data-k="' + k.replace(/"/g, '\\"') + '"]'); if (again && again.focus && e.type === 'keydown') again.focus();
+    }
+    $('#pick').addEventListener('click', togglePick);
+    $('#pick').addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); togglePick(e); } });
     if (chartsAvailable()) {
       drawRadar('beanRadar', chosen);
       drawTime('beanTime', id, 'bar');
+      labelCanvas('beanRadar', chosen.length + ' seduhan dipilih; skala 1–5 untuk Aroma, Flavor, Aftertaste, Acidity, Sweetness, Body, Balance. Rincian ada di tabel perbandingan.');
+      labelCanvas('beanTime', 'Skor keseluruhan (1–10) per seduhan beans ini; rincian ada di tabel perbandingan.');
     }
   }
 
@@ -1133,7 +1243,7 @@ if (typeof module !== 'undefined' && module.exports) {
 
   function renderGrafik() {
     var d = state.data, gf = state.gf;
-    if (!d.seduhan.length) { app.innerHTML = '<h2>Grafik</h2>' + emptyBox('Belum ada data seduhan', 'Grafik akan muncul setelah ada seduhan di tab "Seduhan".'); return; }
+    if (!d.seduhan.length) { app.innerHTML = '<h2>Grafik</h2>' + emptyBox('Belum ada data seduhan', 'Grafik akan muncul setelah ada seduhan yang dicatat.'); return; }
     if (!chartsAvailable()) { app.innerHTML = '<h2>Grafik</h2>' + chartMissing(); return; }
     var beans = d.biji.map(function (b) { return [b[B.id], beanLabel(b)]; }).sort(function (a, b) { return a[1].localeCompare(b[1], 'id'); });
     var seg = [['30', '30 hari'], ['90', '90 hari'], ['', 'Semua']].map(function (r) {
@@ -1204,7 +1314,7 @@ if (typeof module !== 'undefined' && module.exports) {
       gStat('terbaik', best ? fmtNum(best[S.skor], 1) : '–', best ? beanLabel(state.idx[best[S.biji]], best[S.biji]) + ' · ' + fmtDate(best[S.tanggal]) : '') + '</div>';
 
     if (!scored.length) {
-      box.innerHTML = h + emptyBox('Belum ada skor', 'Isi kolom "Skor Keseluruhan (1-10)" pada seduhan agar grafik muncul.');
+      box.innerHTML = h + emptyBox('Belum ada skor', 'Beri skor pada seduhan agar grafik muncul.');
       return;
     }
 
@@ -1257,9 +1367,10 @@ if (typeof module !== 'undefined' && module.exports) {
     if (!el) return;
     if (charts[canvasId]) { charts[canvasId].destroy(); delete charts[canvasId]; }
     var pts = trendPoints(brews, state.idx);
-    if (!pts.length) { emptyChart(canvasId, 'Belum ada skor', 'Isi kolom "Skor Keseluruhan (1-10)" pada seduhan agar grafik muncul.'); return; }
+    if (!pts.length) { emptyChart(canvasId, 'Belum ada skor', 'Beri skor pada seduhan agar grafik muncul.'); return; }
     var lo = Math.min.apply(null, pts.map(function (p) { return p.y; }));
     var x0 = pts[0].day, x1 = pts[pts.length - 1].day;
+    labelCanvas(canvasId, pts.length + ' seduhan, ' + dayLabel(x0) + ' sampai ' + dayLabel(x1) + '. Skor terendah ' + fmtNum(lo, 1) + ', tertinggi ' + fmtNum(Math.max.apply(null, pts.map(function (p) { return p.y; })), 1) + ', rata-rata ' + fmtNum(avg(pts.map(function (p) { return p.y; })), 1) + '.');
     var pad = x1 === x0 ? 3 : Math.max(0.6, (x1 - x0) * 0.03);
     var sets = [{
       type: 'scatter', label: 'Seduhan', data: pts, pointBackgroundColor: pts.map(function (p) { return scoreColor(p.y); }),
@@ -1305,6 +1416,7 @@ if (typeof module !== 'undefined' && module.exports) {
     var shown = o.all ? groups : groups.slice(0, GF_TOP);
     el.parentNode.style.height = Math.max(110, shown.length * 30 + 34) + 'px';
     var maxLen = narrow() ? 20 : 28;
+    labelCanvas(canvasId, shown.slice(0, 8).map(function (g) { return truncate(g.label, 40) + ' ' + fmtNum(g.avg, 1) + ' (' + g.n + ' seduhan)'; }).join('; ') + (shown.length > 8 ? '; dan ' + (shown.length - 8) + ' lainnya' : '') + '.');
     charts[canvasId] = new Chart(el, {
       type: 'bar',
       data: {
@@ -1341,8 +1453,9 @@ if (typeof module !== 'undefined' && module.exports) {
     var el = document.getElementById(canvasId);
     if (!el) return;
     if (charts[canvasId]) { charts[canvasId].destroy(); delete charts[canvasId]; }
-    if (!base) { emptyChart(canvasId, 'Belum ada penilaian', 'Isi atribut Aroma sampai Balance (1–5) agar profil rasa muncul.'); return; }
+    if (!base) { emptyChart(canvasId, 'Belum ada penilaian', 'Beri penilaian Aroma sampai Balance (1–5) agar profil rasa muncul.'); return; }
     var num = function (arr) { return arr.map(function (v) { return isNum(v) ? Math.round(v * 100) / 100 : 0; }); };
+    labelCanvas(canvasId, truncate(label, 40) + ': ' + SCA.map(function (a, i) { return a.label + ' ' + fmtNum(isNum(base[i]) ? base[i] : 0, 1); }).join(', ') + ' (skala 1–5).');
     var sets = [];
     if (cmp) sets.push({ label: 'Semua beans', data: num(cmp), borderColor: '#b4b4b4', backgroundColor: 'rgba(180,180,180,.15)', pointRadius: 0, borderWidth: 2, borderDash: [5, 4] });
     sets.push({ label: truncate(label, 24), data: num(base), borderColor: CLR.blue, backgroundColor: 'rgba(0,175,241,.22)', pointBackgroundColor: CLR.blue, pointRadius: 3, borderWidth: 2.5 });
@@ -1363,7 +1476,8 @@ if (typeof module !== 'undefined' && module.exports) {
     var el = document.getElementById(canvasId);
     if (!el) return;
     if (charts[canvasId]) { charts[canvasId].destroy(); delete charts[canvasId]; }
-    if (!buckets.length) { emptyChart(canvasId, 'Belum ada tanggal', 'Isi kolom "Tanggal Seduh" agar aktivitas muncul.'); return; }
+    if (!buckets.length) { emptyChart(canvasId, 'Belum ada tanggal', 'Seduhan perlu bertanggal agar aktivitas muncul.'); return; }
+    labelCanvas(canvasId, buckets.length + ' periode, total ' + buckets.reduce(function (t, b) { return t + b.count; }, 0) + ' seduhan; paling banyak ' + buckets.reduce(function (m, b) { return b.count > m.count ? b : m; }, buckets[0]).label + ' (' + buckets.reduce(function (m, b) { return Math.max(m, b.count); }, 0) + ' seduhan).');
     charts[canvasId] = new Chart(el, {
       type: 'bar',
       data: { labels: buckets.map(function (b) { return b.label; }), datasets: [{ label: 'Seduhan', data: buckets.map(function (b) { return b.count; }), backgroundColor: CLR.blue, borderRadius: 6, maxBarThickness: 34 }] },
@@ -1402,10 +1516,11 @@ if (typeof module !== 'undefined' && module.exports) {
     var ser = scoreSeries(state.data.seduhan, state.idx, beanId);
     if (!ser.labels.length) {
       var p = el.parentNode;
-      p.innerHTML = emptyBox('Belum ada skor', 'Isi kolom "Skor Keseluruhan (1-10)" pada seduhan agar grafik muncul.');
+      p.innerHTML = emptyBox('Belum ada skor', 'Beri skor pada seduhan agar grafik muncul.');
       return;
     }
     var isBar = type === 'bar';
+    labelCanvas(canvasId, ser.labels.length + ' tanggal seduh dengan skor keseluruhan (1–10).');
     charts[canvasId] = new Chart(el, {
       type: isBar ? 'bar' : 'line',
       data: {
@@ -1433,8 +1548,11 @@ if (typeof module !== 'undefined' && module.exports) {
     var r = parts[0] || 'home';
     var links = document.querySelectorAll('#nav a');
     for (var i = 0; i < links.length; i++) {
-      links[i].className = links[i].getAttribute('data-r') === r ? 'active' : '';
+      var cur = links[i].getAttribute('data-r') === r;
+      links[i].className = cur ? 'active' : '';
+      if (cur) links[i].setAttribute('aria-current', 'page'); else links[i].removeAttribute('aria-current');
     }
+    setTitle({ home: 'Ringkasan', seduhan: 'Seduhan', biji: 'Beans', grafik: 'Grafik', catat: 'Catat Seduhan' }[r] || 'Ringkasan');
     if (!state.data) return;
     window.scrollTo(0, 0);
     try {
@@ -1464,7 +1582,7 @@ if (typeof module !== 'undefined' && module.exports) {
     state.today = data.meta.today || new Date().toISOString().slice(0, 10);
     var sub = document.getElementById('subtitle');
     sub.textContent = (data.meta.spreadsheetName ? data.meta.spreadsheetName + ' · ' : '') +
-      (backendOn() ? 'jurnal dengan input & analisa AI' : 'dashboard baca-saja');
+      (!backendOn() ? 'dashboard baca-saja' : (state.source === 'fallback' ? 'baca-saja · server tidak terjangkau, data tersimpan' : 'jurnal seduhan pribadi'));
   }
 
   function onData(data) {
@@ -1529,17 +1647,35 @@ if (typeof module !== 'undefined' && module.exports) {
     return h + (open ? '</div>' : '');
   }
 
+  /** Input tanggal bawaan browser mengikuti locale perangkat; tampilkan juga format jurnal ("d Mmm yyyy"). */
+  function enhanceDates() {
+    var els = app.querySelectorAll('input[type=date]');
+    for (var i = 0; i < els.length; i++) (function (el) {
+      el.setAttribute('lang', 'id');
+      if (el._upd) return;
+      var hint = document.createElement('div');
+      hint.className = 'dhint'; hint.setAttribute('aria-live', 'polite');
+      el.parentNode.appendChild(hint);
+      el._upd = function () { hint.textContent = el.value ? 'Tampil di jurnal: ' + fmtDate(el.value) : 'Format tanggal mengikuti pengaturan perangkat.'; };
+      el.addEventListener('input', el._upd); el.addEventListener('change', el._upd);
+      el._upd();
+    })(els[i]);
+  }
+
   function todayLocal() { return state.today || new Date().toISOString().slice(0, 10); }
 
   function renderCatat() {
-    var d = state.data, on = backendOn();
-    var h = '<h2>Catat Seduhan</h2>';
+    var d = state.data, on = backendUsable();
+    var h = '<h2>Catat Seduhan</h2><p class="ownerline" id="cowner">Fitur ini hanya untuk pemilik jurnal (butuh PIN).</p>';
     if (state.flash) { h += '<div class="ok" id="cflash">' + esc(state.flash) + '</div>'; state.flash = ''; }
-    if (!on) {
-      h += '<div class="setup"><b>Fitur Catat &amp; Analisa AI belum aktif.</b><br>Pasang backend Apps Script, lalu isi <code>BACKEND_URL</code> di bagian atas <code>index.html</code>. ' +
+    if (!on && !backendOn()) {
+      h += '<div class="setup" id="cdown"><b>Fitur Catat &amp; Analisa AI belum aktif.</b><br>Pasang backend Apps Script, lalu isi <code>BACKEND_URL</code> di bagian atas <code>index.html</code>. ' +
         'Langkahnya ada di <code>backend/SETUP-id.md</code>. Sementara itu dasbor tetap bisa dipakai membaca data.</div>';
+    } else if (!on) {
+      h += '<div class="setup" id="cdown" role="status"><b>Server jurnal belum terjangkau.</b><br>Tombol Simpan dan Bantu isi dengan AI dinonaktifkan sementara supaya catatanmu tidak hilang. Muat ulang halaman setelah koneksi pulih.</div>';
     }
     var beans = sortBrews(d.seduhan, 'desc');
+    var latest = beans.length ? beans[0] : null;
     var defBean = beans.length ? String(beans[0][S.biji]) : (d.biji.length ? String(d.biji[0][B.id]) : '__new');
     var opts = d.biji.map(function (b) {
       return '<option value="' + esc(b[B.id]) + '"' + (String(b[B.id]) === defBean ? ' selected' : '') + '>' + esc(beanLabel(b) + ' (' + b[B.id] + ')') + '</option>';
@@ -1547,17 +1683,20 @@ if (typeof module !== 'undefined' && module.exports) {
     var stored = pinStore.get();
 
     h += '<fieldset id="cfs"' + (on ? '' : ' disabled') + '>' +
-      '<div class="panel"><h3>PIN</h3><div class="field"><label for="cpin">PIN aplikasi</label><input type="password" id="cpin" autocomplete="current-password" inputmode="numeric" placeholder="PIN dari APP_PIN" value="' + esc(state.pin || stored) + '"></div>' +
+      '<div class="panel"><h3>PIN</h3><div class="field"><label for="cpin">PIN aplikasi</label><input type="password" id="cpin" autocomplete="current-password" inputmode="numeric" placeholder="PIN" value="' + esc(state.pin || stored) + '"></div>' +
       '<label class="check"><input type="checkbox" id="cremember"' + (stored ? ' checked' : '') + '> Ingat di perangkat ini</label>' +
-      '<div class="muted small" style="margin-top:6px">PIN hanya dikirim ke backend Apps Script milikmu. Jangan centang "ingat" di perangkat bersama.</div></div>' +
+      '<div class="muted small" style="margin-top:6px">PIN hanya dikirim ke server jurnal ini. Jangan centang "Ingat" di perangkat bersama.</div></div>' +
       '<div class="panel"><h3>Ceritakan seduhanmu</h3><div class="field"><label for="ctext">Teks bebas</label><textarea id="ctext" placeholder="Contoh: Tadi pagi seduh Kerinci Honey pakai V60, 16 g kopi 256 g air suhu 94, grind 24 klik, 3:00. Rasanya gula merah dan jeruk manis, skor 8."></textarea></div>' +
       '<div class="row" style="margin-top:10px"><button type="button" id="cai" class="ai">✨ Bantu isi dengan AI</button><span class="muted small" id="cstatus" role="status"></span></div></div>' +
       '<div class="panel"><h3>Beans</h3><div class="field"><label for="cbiji">Pilih beans</label><select id="cbiji">' + opts + '</select></div>' +
-      '<div id="cnew" style="margin-top:12px;display:' + (defBean === '__new' ? 'block' : 'none') + '"><div class="muted small" style="margin-bottom:8px">Beans baru akan ditambahkan ke tab "Biji" dengan ID otomatis.</div>' + formHtml('b', FORM_BIJI) + '</div></div>' +
-      '<div class="panel"><h3>Seduhan</h3>' + formHtml('s', FORM_SEDUH) + '</div>' +
+      '<div id="cnew" style="margin-top:12px;display:' + (defBean === '__new' ? 'block' : 'none') + '"><div class="muted small" style="margin-bottom:8px">Beans baru akan disimpan dengan ID otomatis.</div>' + formHtml('b', FORM_BIJI) + '</div></div>' +
+      '<div class="panel"><div class="row"><h3 style="margin:0">Seduhan</h3><span class="spacer"></span>' +
+      (latest && !isBlank(latest[S.id]) ? '<button type="button" id="cdup" class="ghost sm" title="Salin parameter seduhan terakhir (' + esc(latest[S.id]) + ') ke form ini">⎘ Duplikat seduhan terakhir</button>' : '') + '</div>' +
+      '<div class="muted small" id="cdupnote" role="status" style="margin:4px 0 8px"></div>' + formHtml('s', FORM_SEDUH) + '</div>' +
       '<div class="row"><button type="button" id="csave">Simpan</button><button type="button" id="creset" class="ghost">Kosongkan form</button><span class="muted small" id="csmsg" role="status"></span></div>' +
       '</fieldset>';
     app.innerHTML = h;
+    enhanceDates();
     setVal('s', 'Tanggal Seduh', todayLocal());
 
     function status(id, msg, kind) {
@@ -1593,7 +1732,49 @@ if (typeof module !== 'undefined' && module.exports) {
 
     $('#creset').addEventListener('click', function () { renderCatat(); });
 
+    /* validasi min/max di sisi klien, pesan tampil di bawah kolom */
+    function showErr(el, msg) {
+      var box = el.parentNode, errId = el.id + '-err', e = document.getElementById(errId);
+      if (!msg) {
+        if (e) e.parentNode.removeChild(e);
+        box.classList.remove('invalid'); el.removeAttribute('aria-invalid'); el.removeAttribute('aria-describedby');
+        return;
+      }
+      if (!e) { e = document.createElement('div'); e.id = errId; e.className = 'ferr'; e.setAttribute('role', 'alert'); box.appendChild(e); }
+      e.textContent = msg; box.classList.add('invalid'); el.setAttribute('aria-invalid', 'true'); el.setAttribute('aria-describedby', errId);
+    }
+    function checkField(el) {
+      var def = FORM_SEDUH[+el.id.split('-')[2]];
+      var msg = validateField(def, el.value);
+      showErr(el, msg);
+      return msg;
+    }
+    function validateAll() {
+      var first = null;
+      FORM_SEDUH.forEach(function (f, i) {
+        if (f.section) return;
+        var el = document.getElementById('f-s-' + i);
+        if (el && checkField(el) && !first) first = el;
+      });
+      return first;
+    }
+    $('#cfs').addEventListener('change', function (e) { if (e.target && e.target.id && /^f-s-\d+$/.test(e.target.id)) checkField(e.target); });
+    $('#cfs').addEventListener('input', function (e) { if (e.target && e.target.parentNode && e.target.parentNode.classList.contains('invalid')) checkField(e.target); });
+
+    function applyDup(dd) {
+      var els = app.querySelectorAll('[data-grp="s"]');
+      for (var i = 0; i < els.length; i++) { setVal('s', els[i].getAttribute('data-col'), ''); showErr(els[i], ''); }
+      Object.keys(dd.seduhan).forEach(function (k) { setVal('s', k, dd.seduhan[k]); });
+      if (dd.bean && state.idx[dd.bean]) { $('#cbiji').value = dd.bean; toggleNew(); }
+      var note = $('#cdupnote');
+      if (note) note.textContent = 'Parameter disalin dari seduhan ' + (dd.source ? '#' + dd.source : 'sebelumnya') + '. Tanggal diganti hari ini; skor dan catatan dikosongkan. Isi penilaian lalu tekan Simpan.';
+    }
+    if ($('#cdup')) $('#cdup').addEventListener('click', function () { applyDup(dupDraft(latest, todayLocal())); var f = $('#cbiji'); if (f && f.scrollIntoView) f.scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+    if (state.dupDraft) { var dd = state.dupDraft; state.dupDraft = null; applyDup(dd); }
+
     $('#csave').addEventListener('click', function () {
+      var bad = validateAll();
+      if (bad) { status('csmsg', 'Periksa kolom yang ditandai: nilai di luar rentang.', 'err'); if (bad.scrollIntoView) bad.scrollIntoView({ block: 'center' }); bad.focus(); return; }
       var pin = readPin('csmsg'); if (!pin) return;
       var sel = $('#cbiji').value, isNew = sel === '__new';
       var seduhan = collect('s'), biji = isNew ? collect('b') : null;
@@ -1607,8 +1788,8 @@ if (typeof module !== 'undefined' && module.exports) {
       api(payload).then(function (j) {
         var ids = j.ids || {};
         state.flash = 'Tersimpan ✔ Seduhan ' + (ids.seduhan || '') + ' untuk beans ' + (ids.biji || '') + (ids.bijiBaru ? ' (beans baru)' : '') + '.';
-        if (j.data) { var nd = j.data; nd.meta = nd.meta || {}; nd.meta.today = todayLocal(); setData(nd); }
         state.source = 'backend';
+        if (j.data) { var nd = j.data; nd.meta = nd.meta || {}; nd.meta.today = todayLocal(); setData(nd); }
         route();
       }).catch(function (err) {
         if (badPin(err)) forgetPin();
@@ -1623,6 +1804,7 @@ if (typeof module !== 'undefined' && module.exports) {
     var el = fieldEl(grp, col);
     if (!el) return false;
     el.value = val === null || val === undefined ? '' : String(val);
+    if (el._upd) el._upd();
     if (el.parentNode) el.parentNode.className = el.parentNode.className.replace(/\s*\bai\b/g, '') + (ai ? ' ai' : '');
     return true;
   }
@@ -1723,13 +1905,22 @@ if (typeof module !== 'undefined' && module.exports) {
 
   app.addEventListener('click', function (e) {
     var t = e.target && e.target.closest ? e.target.closest('[data-ai]') : null;
-    if (!t || t.disabled || !backendOn()) return;
+    if (!t || t.disabled || !backendUsable()) return;
     var brew = t.getAttribute('data-brew'), bean = t.getAttribute('data-bean');
     if (brew) {
       var found = null;
       state.data.seduhan.forEach(function (s) { if (String(s[S.id]) === brew) found = s; });
       openAnalysis({ brew: brew, bean: found ? found[S.biji] : '' }, t.closest('.brew'));
     } else if (bean) openAnalysis({ bean: bean }, t.closest('.brew'));
+  });
+  app.addEventListener('click', function (e) {
+    var t = e.target && e.target.closest ? e.target.closest('[data-dup]') : null;
+    if (!t || t.disabled || !backendUsable()) return;
+    var id = t.getAttribute('data-dup'), found = null;
+    state.data.seduhan.forEach(function (s) { if (String(s[S.id]) === id) found = s; });
+    if (!found) return;
+    state.dupDraft = dupDraft(found, todayLocal());
+    if (location.hash === '#/catat') route(); else location.hash = '#/catat';
   });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAnalysis(); });
 
@@ -1751,7 +1942,7 @@ if (typeof module !== 'undefined' && module.exports) {
       return d;
     }).catch(function () {
       state.source = 'fallback';
-      setNotice('<div class="warn" id="fbnotice">Backend belum terjangkau, menampilkan <code>data.json</code> (mungkin belum terbaru).</div>');
+      setNotice('<div class="warn" id="fbnotice">Server jurnal belum terjangkau, jadi yang tampil adalah data tersimpan (mungkin belum terbaru) dan fitur Catat & Analisa AI dinonaktifkan sementara.</div>');
       return fromJson();
     });
   }

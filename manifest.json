@@ -1,0 +1,16 @@
+{
+  "name": "Jurnal Seduh Kopi",
+  "short_name": "Jurnal Kopi",
+  "description": "Jurnal seduhan kopi pribadi: catatan seduhan, beans, grafik, dan analisa AI.",
+  "lang": "id",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#effaff",
+  "theme_color": "#00aff1",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

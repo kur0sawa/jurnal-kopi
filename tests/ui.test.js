@@ -156,7 +156,7 @@ const fld = (grp, col) => '[data-grp="' + grp + '"][data-col="' + col + '"]';
   const brewBtn = dom.window.document.querySelector('button[data-ai][data-brew="S02"]'); assert(brewBtn, 'tombol analisa di tabel');
   brewBtn.click(); await sleep(120); assert.equal(pending.seduhanId, 'S02'); click(dom, '#aiclose');
   dom = await render({ backend: URL_B, hash: '#/seduhan', storage: { jk_pin: '1234' }, handler: dataHandler((u, o, body) => { pending = body; return json({ ok: true, analysis: 'ok', usedBrews: 1, totalBrews: 1 }); }) });
-  assert.equal(dom.window.document.querySelectorAll('#flist button[data-ai]').length, data.seduhan.length, 'tombol di tiap baris');
+  assert.equal(dom.window.document.querySelectorAll('#flist button[data-ai]').length, Math.min(20, data.seduhan.length), 'tombol di tiap kartu yang tampil (halaman pertama 20)');
   dom.window.document.querySelector('#flist button[data-ai]').click(); await sleep(50);
   assert(pending.seduhanId); assert.equal($(dom, '#airesult').textContent, 'ok');
   assert($(dom, '#flist .brew #aipanel'), 'hasil Analisa tampil di dalam kartu seduhan'); assert(!$(dom, '.ovl'), 'bukan modal');
@@ -181,6 +181,107 @@ const fld = (grp, col) => '[data-grp="' + grp + '"][data-col="' + col + '"]';
   // 9) miniMarkdown aman
   const mm = dom.window.eval("miniMarkdown('## Judul\\n**tebal** & <b>x</b>\\n- a\\n- b')");
   assert(/<h4>Judul<\/h4>/.test(mm) && /<strong>tebal<\/strong>/.test(mm) && /&lt;b&gt;/.test(mm) && /<li>b<\/li>/.test(mm));
+
+  // 10) Audit: pagination, duplikat, validasi, aksesibilitas, backend tak terjangkau, teks ramah pengunjung
+  const nFull = data.seduhan.length; assert(nFull > 20, 'data uji cukup untuk pagination');
+  dom = await render({ backend: URL_B, hash: '#/seduhan', handler: dataHandler() });
+  const cards = () => $(dom, '#flist') ? $(dom, '#flist').querySelectorAll('.brew').length : 0;
+  assert.equal(cards(), 20, '20 kartu pertama'); assert(/Tampilkan lebih banyak/.test($(dom, '#fmore').textContent));
+  assert(new RegExp(nFull + ' dari ' + nFull + ' seduhan').test($(dom, '#fcount').textContent), $(dom, '#fcount').textContent);
+  click(dom, '#fmore'); assert.equal(cards(), nFull); assert(!$(dom, '#fmore'), 'tombol hilang bila habis');
+  assert.equal($(dom, '#fcount').textContent, nFull + ' dari ' + nFull + ' seduhan');
+  setIn(dom, '#fsort', 'asc'); assert.equal(cards(), 20, 'urutan mereset halaman'); assert($(dom, '#fmore'));
+  click(dom, '#fmore'); setIn(dom, '#fq', 'V60'); const nv = cards(); assert(nv <= 20 && !$(dom, '#fmore') === (nv <= 20), 'pencarian mereset halaman');
+  assert(new RegExp('^' + nv + ' dari ' + nFull).test($(dom, '#fcount').textContent));
+  click(dom, '#freset'); assert.equal(cards(), 20, 'reset filter');
+  assert($(dom, '#fdari').getAttribute('lang') === 'id' && $(dom, '#fdari').parentNode.querySelector('.dhint'), 'helper tanggal');
+  setIn(dom, '#fdari', '2026-09-26'); assert(/26 Sep 2026/.test($(dom, '#fdari').parentNode.querySelector('.dhint').textContent));
+
+  // duplikat dari kartu
+  const src = data.seduhan.find(x => x['ID Seduhan'] === 'S02');
+  dom = await render({ backend: URL_B, hash: '#/seduhan', handler: dataHandler((u, o, body) => body && body.action === 'save' ? json({ ok: true, ids: { biji: src['ID Biji'], seduhan: 'S30' }, data }) : null) });
+  click(dom, '#fmore'); const dupBtn = $(dom, '#flist [data-dup="S02"]'); assert(dupBtn && !dupBtn.disabled && dupBtn.getBoundingClientRect, 'tombol Duplikat di kartu');
+  dupBtn.click(); await sleep(60);
+  assert.equal(dom.window.location.hash, '#/catat'); assert.equal($(dom, '#cbiji').value, String(src['ID Biji']));
+  const today = dom.window.__app.state.today;
+  assert.equal($(dom, fld('s', 'Tanggal Seduh')).value, today, 'tanggal = hari ini');
+  ['Dripper', 'Kertas Filter', 'Merek Air', 'Suhu Air (C)', 'Dosis Kopi (g)', 'Air Total (g)', 'Grinder', 'Setting Grind', 'Pouring Interval (detik per langkah)'].forEach(c => {
+    if (src[c] !== undefined && src[c] !== null && src[c] !== '') assert.equal($(dom, fld('s', c)).value, String(src[c]), 'disalin ' + c);
+  });
+  ['Aroma (1-5)', 'Flavor (1-5)', 'Skor Keseluruhan (1-10)', 'Deskriptor Rasa / Notes', 'Catatan Pribadi', 'Tweak Berikutnya', 'Rasio', 'Total Brew Time'].forEach(c => assert.equal($(dom, fld('s', c)).value, '', 'kosong ' + c));
+  assert(/disalin dari seduhan #S02/i.test($(dom, '#cdupnote').textContent));
+  setIn(dom, '#cpin', '1234'); click(dom, '#csave'); await sleep(50);
+  const dsv = dom.calls.find(c => c.body && c.body.action === 'save');
+  assert(dsv, 'alur simpan biasa'); assert.equal(dsv.body.seduhan['ID Biji'], src['ID Biji']); assert.equal(dsv.body.seduhan['Tanggal Seduh'], today);
+  assert.equal(dsv.body.seduhan['Skor Keseluruhan (1-10)'], undefined); assert.equal(dsv.body.seduhan['Dosis Kopi (g)'], src['Dosis Kopi (g)']);
+  // tombol "Duplikat seduhan terakhir" di Catat
+  dom = await render({ backend: URL_B, hash: '#/catat', handler: dataHandler() });
+  setIn(dom, fld('s', 'Dripper'), 'xx'); setIn(dom, fld('s', 'Aroma (1-5)'), '4'); click(dom, '#cdup');
+  const lastB = dom.window.eval("sortBrews(__app.state.data.seduhan, 'desc')[0]");
+  assert.equal($(dom, fld('s', 'Dripper')).value, String(lastB['Dripper'] || '')); assert.equal($(dom, fld('s', 'Aroma (1-5)')).value, '', 'skor dikosongkan');
+  assert.equal($(dom, fld('s', 'Tanggal Seduh')).value, dom.window.__app.state.today);
+
+  // validasi min/max sisi klien
+  dom = await render({ backend: URL_B, hash: '#/catat', handler: dataHandler((u, o, body) => json({ ok: true, ids: { biji: 'B01', seduhan: 'S99' }, data })) });
+  setIn(dom, '#cpin', '1234'); setIn(dom, fld('s', 'Aroma (1-5)'), '7'); setIn(dom, fld('s', 'Skor Keseluruhan (1-10)'), '11');
+  assert(/1–5/.test($(dom, fld('s', 'Aroma (1-5)')).parentNode.querySelector('.ferr').textContent), 'pesan inline aroma');
+  click(dom, '#csave'); await sleep(30);
+  assert.equal(dom.calls.filter(c => c.body && c.body.action === 'save').length, 0, 'tidak terkirim bila tak valid');
+  assert.equal($(dom, fld('s', 'Aroma (1-5)')).getAttribute('aria-invalid'), 'true'); assert(/1–10/.test($(dom, fld('s', 'Skor Keseluruhan (1-10)')).parentNode.querySelector('.ferr').textContent));
+  assert(/Periksa kolom/.test($(dom, '#csmsg').textContent));
+  setIn(dom, fld('s', 'Aroma (1-5)'), '4'); setIn(dom, fld('s', 'Skor Keseluruhan (1-10)'), '8.5');
+  assert(!dom.window.document.querySelector('.ferr') && !$(dom, fld('s', 'Aroma (1-5)')).getAttribute('aria-invalid'), 'pesan hilang setelah dibetulkan');
+  click(dom, '#csave'); await sleep(50); assert.equal(dom.calls.filter(c => c.body && c.body.action === 'save').length, 1);
+  setIn(dom, fld('s', 'Suhu Air (C)'), '150'); assert($(dom, fld('s', 'Suhu Air (C)')).parentNode.querySelector('.ferr'));
+
+  // teks ramah pengunjung di Catat
+  assert(/Fitur ini hanya untuk pemilik jurnal \(butuh PIN\)\./.test(text(dom))); assert.equal($(dom, '#cpin').getAttribute('placeholder'), 'PIN'); assert(!/APP_PIN|Apps Script|tab "Biji"|Google Sheet/.test(text(dom)));
+  for (const emp of [{ biji: [], seduhan: [], meta: {} }, { biji: data.biji, seduhan: [], meta: {} }]) {
+    for (const h of ['#/', '#/seduhan', '#/biji/NONE', '#/grafik']) {
+      dom = await render({ backend: URL_B, hash: h, handler: (u) => json(emp) });
+      assert(!/Google Sheet|tab "|Tab "|kolom "|Isi baris|APP_PIN/.test(text(dom)), h + ': ' + text(dom).slice(0, 300));
+    }
+  }
+  // backend tak terjangkau: tombol & form nonaktif + catatan + subtitle
+  for (const h of ['#/seduhan', '#/biji/B01', '#/catat']) {
+    dom = await render({ backend: URL_B, hash: h, handler: (url) => url.indexOf(URL_B) === 0 ? Promise.reject(new Error('net')) : json(data) });
+    assert($(dom, '#fbnotice'), h); assert(/tidak terjangkau/.test($(dom, '#subtitle').textContent) && !/analisa AI/i.test($(dom, '#subtitle').textContent), $(dom, '#subtitle').textContent);
+    const ais = dom.window.document.querySelectorAll('button[data-ai],button[data-dup]'); if (h !== '#/catat') assert(ais.length && [].every.call(ais, b => b.disabled && b.title), h + ': tombol nonaktif');
+    if (h === '#/catat') { assert($(dom, '#cfs').disabled); assert(/belum terjangkau/.test($(dom, '#cdown').textContent)); assert(/Fitur ini hanya untuk pemilik/.test(text(dom))); }
+    if (h === '#/seduhan') { $(dom, 'button[data-ai]').click(); assert(!$(dom, '#aipanel')); }
+  }
+  dom = await render({ backend: URL_B, hash: '#/', handler: dataHandler() });
+  assert(!/tidak terjangkau/.test($(dom, '#subtitle').textContent) && !$(dom, 'button[data-ai]:disabled'), 'normal: subtitle & tombol aktif');
+
+  // judul per rute, aria-current, ringkasan kanvas, satuan & format angka
+  const titles = { '#/': 'Ringkasan', '#/seduhan': 'Seduhan', '#/biji': 'Beans', '#/grafik': 'Grafik', '#/catat': 'Catat Seduhan' };
+  for (const h of Object.keys(titles)) {
+    dom = await render({ backend: URL_B, hash: h, handler: dataHandler() });
+    assert.equal(dom.window.document.title, titles[h] + ' · Jurnal Seduh Kopi', h);
+    const cur = dom.window.document.querySelectorAll('#nav a[aria-current]'); assert.equal(cur.length, 1, h); assert.equal(cur[0].getAttribute('aria-current'), 'page'); assert.equal(cur[0].getAttribute('data-r'), { '#/': 'home', '#/biji': 'biji' }[h] || h.slice(2));
+  }
+  dom = await render({ backend: URL_B, hash: '#/biji/B01', handler: dataHandler() });
+  assert(/^.+ · Beans · Jurnal Seduh Kopi$/.test(dom.window.document.title) && /CONTOH|Kerinci|Gayo|\w/.test(dom.window.document.title));
+  dom.window.location.hash = '#/grafik'; await sleep(60);
+  assert.equal(dom.window.document.querySelector('#nav a[aria-current]').getAttribute('data-r'), 'grafik', 'aria-current ikut berpindah');
+  for (const id of ['gTrend', 'gBeans', 'gRadar', 'gAct']) { const c = $(dom, '#' + id); assert(c && c.getAttribute('role') === 'img' && c.getAttribute('aria-label').length > 30, 'aria-label ' + id); }
+  dom = await render({ backend: URL_B, hash: '#/', handler: dataHandler() }); assert(/seduhan/.test($(dom, '#homeTime').getAttribute('aria-label')));
+  dom = await render({ backend: URL_B, hash: '#/biji/B01', handler: dataHandler() });
+  assert(!/\bhr\b/.test(text(dom)) && /\d+ hari/.test(text(dom)), 'satuan hari');
+  assert.equal(dom.window.document.querySelectorAll('dl.info dt').length && [].filter.call(dom.window.document.querySelectorAll('dl.info dt'), x => /Tanggal roasting|Umur kopi/i.test(x.textContent)).length, 0, 'tanpa duplikat roasting/umur di rincian');
+  assert(/Roasting \d+ \w+ \d{4}/.test(text(dom)), 'tanggal roasting tetap ada di kartu umur');
+  const rasioRaw = data.seduhan.find(x => /^\d+:\d+\.\d+$/.test(String(x['Rasio']))), rasioId = rasioRaw['ID Biji'];
+  dom = await render({ backend: URL_B, hash: '#/biji/' + rasioId, handler: dataHandler() });
+  assert(!/\d:\d+\.\d/.test(text(dom)), 'rasio tanpa titik'); assert(/\d:\d+,\d/.test(text(dom)), 'rasio bertanda koma');
+  dom = await render({ backend: URL_B, hash: '#/seduhan', handler: dataHandler() }); assert(/Rasio \d+:\d+,\d/.test(text(dom)));
+  dom = await render({ backend: URL_B, hash: '#/', handler: dataHandler() }); assert(/\d,\d/.test($(dom, '.cards').textContent) && !/\d\.\d/.test($(dom, '.cards').textContent), 'rata-rata berkoma');
+
+  // berkas statis: favicon, manifest, ikon, theme-color; target sentuh & font form di CSS
+  assert(/<link rel="icon" href="data:image\/svg\+xml/.test(html) && /<meta name="theme-color"/.test(html) && /<link rel="manifest" href="manifest\.json">/.test(html) && /<link rel="apple-touch-icon" href="apple-touch-icon\.png">/.test(html));
+  const man = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8'));
+  assert(man.name && man.start_url && man.theme_color && man.icons.length >= 2); man.icons.forEach(i => assert(fs.existsSync(path.join(root, i.src)), i.src)); assert(fs.existsSync(path.join(root, 'apple-touch-icon.png')));
+  assert(/min-height:44px/.test(html) && /textarea\{[^}]*font:inherit/.test(html) && /input\[type=text\][^{]*\{[^}]*font-size:16px/.test(html));
+  assert(/--blue-d:#0072ab/.test(html) && !/nav a\.active\{background:var\(--blue\)/.test(html));
 
   console.log('jsdom UI tests ok');
 })().catch(e => { console.error(e); process.exit(1); });

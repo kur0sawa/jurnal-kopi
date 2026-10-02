@@ -40,5 +40,14 @@ function render(payload, hash, status = 200) {
   assert(/Belum ada data/.test(dom.window.document.getElementById('app').textContent));
   dom = await render(null, '#/', 404);
   assert(/Gagal memuat data\.json/.test(dom.window.document.body.textContent));
+  // fungsi bantu: rasio, validasi, duplikat
+  const ev = c => dom.window.eval(c);
+  assert.equal(ev("fmtRasio('1:15.8')"), '1:15,8'); assert.equal(ev("fmtRasio('1:16')"), '1:16'); assert.equal(ev("fmtRasio(null)"), '');
+  assert.equal(ev("validateField({type:'num',min:1,max:5},'3')"), ''); assert.equal(ev("validateField({type:'num',min:1,max:5},'')"), '');
+  assert(/1–5/.test(ev("validateField({type:'num',min:1,max:5},'6')"))); assert(/1–5/.test(ev("validateField({type:'num',min:1,max:5},'0.5')")));
+  assert(/angka/.test(ev("validateField({type:'num',min:1,max:5},'abc')"))); assert.equal(ev("validateField({type:'text'},'abc')"), '');
+  const dd = ev("dupDraft({'ID Seduhan':'S1','ID Biji':'B01','Tanggal Seduh':'2026-01-01','Dripper':'V60','Dosis Kopi (g)':16,'Aroma (1-5)':4,'Skor Keseluruhan (1-10)':8,'Rasio':'1:16'}, '2026-10-02')");
+  assert.deepEqual(JSON.parse(JSON.stringify(dd)), { bean: 'B01', source: 'S1', seduhan: { 'Tanggal Seduh': '2026-10-02', 'Dripper': 'V60', 'Dosis Kopi (g)': 16 } });
+  assert.equal(ev('PAGE_SIZE'), 20);
   console.log('jsdom render ok');
 })().catch(e => { console.error(e); process.exit(1); });

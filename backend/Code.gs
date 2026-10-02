@@ -938,6 +938,12 @@ function convertCell_(key, value, displayValue, tz) {
       var t = String(displayValue).trim();
       return t === '' ? null : t;
     }
+    // Kolom tanggal: ambil bagian tanggal SEPERTI TERTULIS di sheet (abaikan jam), supaya sel
+    // yang berisi jam (mis. 30/09 17:00) tidak bergeser sehari akibat beda zona waktu.
+    if (DATE_COLS[key]) {
+      var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(displayValue).trim());
+      return m ? m[0] : Utilities.formatDate(value, tz, 'yyyy-MM-dd');
+    }
     return serializeDate_(value, tz);
   }
 
