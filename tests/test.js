@@ -30,6 +30,8 @@ function render(payload, hash, status = 200) {
     t = dom.window.document.getElementById('app').textContent;
     assert(!/Gagal/.test(t), h + ': ' + t.slice(0, 200));
     assert(/CONTOH/.test(t) || h === '#/grafik', h);
+    const vis = (dom.window.document.getElementById('nav').textContent + ' ' + dom.window.document.getElementById('app').textContent).replace(/tab "Biji"|ID Biji|Nama Biji/gi, '');
+    assert(!/\bbiji\b/i.test(vis), h + ': teks UI masih memakai "biji": ' + (/.{20}\bbiji\b.{20}/i.exec(vis) || [''])[0]);
   }
   dom = await render(data, '#/biji/B01');
   assert(dom.window.document.querySelectorAll('td.diff').length > 0);

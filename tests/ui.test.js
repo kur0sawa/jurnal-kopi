@@ -108,7 +108,7 @@ const fld = (grp, col) => '[data-grp="' + grp + '"][data-col="' + col + '"]';
   assert(/Tersimpan/.test(text(dom)) && /S05/.test(text(dom)), text(dom).slice(0, 300));
   assert.equal(dom.window.__app.state.data.seduhan.length, data.seduhan.length + 1, 'data diperbarui dari respons save');
 
-  // 5) Biji baru: AI menyarankan biji baru, form biji terbuka, simpan mengirim biji
+  // 5) Beans baru: AI menyarankan beans baru, form beans terbuka, simpan mengirim biji
   dom = await render({ backend: URL_B, hash: '#/catat', handler: dataHandler((url, o, body) => {
     if (body.action === 'parse') return json({ ok: true, draft: { biji: { 'Nama Biji / Lot': 'Gayo Wine', 'Roastery': 'RC' }, seduhan: { 'Tanggal Seduh': '2026-10-01' } } });
     if (body.action === 'save') return json({ ok: true, ids: { biji: 'B03', seduhan: 'S05', bijiBaru: true }, data: data });
@@ -117,12 +117,12 @@ const fld = (grp, col) => '[data-grp="' + grp + '"][data-col="' + col + '"]';
   assert.equal($(dom, '#cbiji').value, '__new'); assert.equal($(dom, '#cnew').style.display, 'block'); assert.equal($(dom, fld('b', 'Nama Biji / Lot')).value, 'Gayo Wine');
   assert.equal(dom.window.localStorage.getItem('jk_pin'), null, 'tanpa centang -> tidak disimpan');
   // validasi sisi klien
-  setIn(dom, fld('b', 'Nama Biji / Lot'), ''); click(dom, '#csave'); assert(/Nama biji wajib/.test($(dom, '#csmsg').textContent));
+  setIn(dom, fld('b', 'Nama Biji / Lot'), ''); click(dom, '#csave'); assert(/Nama beans wajib/.test($(dom, '#csmsg').textContent));
   setIn(dom, fld('b', 'Nama Biji / Lot'), 'Gayo Wine'); setIn(dom, fld('s', 'Tanggal Seduh'), ''); click(dom, '#csave'); assert(/Tanggal seduh wajib/.test($(dom, '#csmsg').textContent));
   assert.equal(dom.calls.filter(c => c.body && c.body.action === 'save').length, 0);
   setIn(dom, fld('s', 'Tanggal Seduh'), '2026-10-01'); click(dom, '#csave'); await sleep(50);
   const sv = dom.calls.find(c => c.body && c.body.action === 'save');
-  assert.equal(sv.body.biji['Nama Biji / Lot'], 'Gayo Wine'); assert.equal(sv.body.seduhan['ID Biji'], undefined); assert(/biji baru/.test(text(dom)));
+  assert.equal(sv.body.biji['Nama Biji / Lot'], 'Gayo Wine'); assert.equal(sv.body.seduhan['ID Biji'], undefined); assert(/beans baru/.test(text(dom)));
 
   // 6) Galat dari server: PIN salah menghapus PIN tersimpan; galat tampil
   dom = await render({ backend: URL_B, hash: '#/catat', storage: { jk_pin: '0000' }, handler: dataHandler((u, o, body) => json({ ok: false, code: 'PIN_SALAH', error: 'PIN salah.' })) });
@@ -159,6 +159,8 @@ const fld = (grp, col) => '[data-grp="' + grp + '"][data-col="' + col + '"]';
   assert.equal(dom.window.document.querySelectorAll('#flist button[data-ai]').length, data.seduhan.length, 'tombol di tiap baris');
   dom.window.document.querySelector('#flist button[data-ai]').click(); await sleep(50);
   assert(pending.seduhanId); assert.equal($(dom, '#airesult').textContent, 'ok');
+  assert($(dom, '#flist .brew #aipanel'), 'hasil Analisa tampil di dalam kartu seduhan'); assert(!$(dom, '.ovl'), 'bukan modal');
+  assert(!$(dom, '#flist a.brew'), 'tombol tidak di dalam tautan'); assert($(dom, '#flist .brew .bfoot button[data-ai]'), 'tombol di footer kartu');
   dom.window.document.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape' })); assert(!$(dom, '#aipanel'), 'Esc menutup');
 
   // 8) Panel: tanpa PIN -> minta PIN; PIN salah -> minta ulang; galat -> tombol coba lagi

@@ -105,8 +105,13 @@ textarea{border-radius:var(--r-sm);min-height:120px;resize:vertical;line-height:
 button.sm,.btn.sm{padding:5px 14px;min-height:34px;font-size:13px}
 button.ai{background:var(--blue-d)} button.ai:hover{background:#005a87}
 button.ai.ghost{background:transparent;color:var(--blue-d);border:1.5px solid var(--blue-d)} button.ai.ghost:hover{background:var(--cream)}
-.brewbox{display:grid;gap:6px}
-.brewact{display:flex;justify-content:flex-end}
+.brew .bmain{display:block;color:inherit;text-decoration:none}
+.brew .bfoot{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:10px}
+.brew .btweak{flex:1 1 200px;min-width:0;font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.brew .bfoot button{margin-left:auto;flex:none}
+.brew .bai:empty{display:none}
+.brew .bai .inl{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
+.brew .bai .inl h3{font-size:16px}
 .fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
 .field label{font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.08em}
 .field.wide{grid-column:1/-1}
@@ -185,7 +190,7 @@ nav a .ic{display:none}
   <nav id="nav" aria-label="Menu utama">
     <a href="#/" data-r="home"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span>Ringkasan</span></a>
     <a href="#/seduhan" data-r="seduhan"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V9z"/><path d="M17 11h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M8 3v3M12 3v3"/></svg><span>Seduhan</span></a>
-    <a href="#/biji" data-r="biji"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c4.5 0 8 3.5 8 9s-3.5 9-8 9-8-3.5-8-9 3.5-9 8-9z"/><path d="M12 3c-3 4 3 8 0 12s0 6 0 6"/></svg><span>Biji</span></a>
+    <a href="#/biji" data-r="biji"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c4.5 0 8 3.5 8 9s-3.5 9-8 9-8-3.5-8-9 3.5-9 8-9z"/><path d="M12 3c-3 4 3 8 0 12s0 6 0 6"/></svg><span>Beans</span></a>
     <a href="#/grafik" data-r="grafik"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Grafik</span></a>
     <a href="#/catat" data-r="catat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Catat</span></a>
   </nav>
@@ -292,7 +297,7 @@ function indexBiji(biji) {
 }
 
 function beanLabel(b, id) {
-  if (!b) return isBlank(id) ? '(tanpa biji)' : String(id) + ' (tidak ditemukan)';
+  if (!b) return isBlank(id) ? '(tanpa beans)' : String(id) + ' (tidak ditemukan)';
   var n = b[FIELD.biji.nama];
   return isBlank(n) ? String(b[FIELD.biji.id]) : n;
 }
@@ -720,7 +725,7 @@ function activityBuckets(brews) {
 
 /** Definisi form Catat (col = header kolom Sheet). */
 var FORM_BIJI = [
-  { col: 'Nama Biji / Lot', label: 'Nama biji / lot', type: 'text', wide: true, req: true },
+  { col: 'Nama Biji / Lot', label: 'Nama beans / lot', type: 'text', wide: true, req: true },
   { col: 'Roastery', label: 'Roastery', type: 'text' },
   { col: 'Negara', label: 'Negara', type: 'text' },
   { col: 'Region / Terroir', label: 'Region / terroir', type: 'text' },
@@ -735,7 +740,7 @@ var FORM_BIJI = [
   { col: 'Berat (g)', label: 'Berat (g)', type: 'num' },
   { col: 'Harga', label: 'Harga (Rp)', type: 'num' },
   { col: 'Catatan Roastery (flavor notes)', label: 'Catatan roastery (flavor notes)', type: 'area', wide: true },
-  { col: 'Catatan Pribadi', label: 'Catatan pribadi (biji)', type: 'area', wide: true }
+  { col: 'Catatan Pribadi', label: 'Catatan pribadi (beans)', type: 'area', wide: true }
 ];
 var FORM_SEDUH = [
   { section: 'Waktu & alat' },
@@ -879,16 +884,16 @@ if (typeof module !== 'undefined' && module.exports) {
     if (!isBlank(s[S.waktu])) chips.push('⏱ ' + s[S.waktu]);
     if (isNum(s[S.hari])) chips.push('H+' + s[S.hari]);
     var href = bean ? '#/biji/' + encodeURIComponent(s[S.biji]) : '#/seduhan';
-    var card = '<a class="brew" href="' + href + '"><div class="h"><div><div class="t">' + esc(beanLabel(bean, s[S.biji])) + '</div>' +
+    return '<div class="brew"><a class="bmain" href="' + href + '"><div class="h"><div><div class="t">' + esc(beanLabel(bean, s[S.biji])) + '</div>' +
       '<div class="meta">' + esc(fmtDate(s[S.tanggal]) || 'Tanggal tidak diisi') +
       (isBlank(s[S.id]) ? '' : ' · #' + esc(s[S.id])) +
       (bean && !isBlank(bean[B.roastery]) ? ' · ' + esc(bean[B.roastery]) : '') + '</div></div>' + scoreBadge(s[S.skor]) + '</div>' +
       (chips.length ? '<div class="params">' + chips.map(function (c) { return '<span class="chip">' + esc(c) + '</span>'; }).join('') + '</div>' : '') +
       (!isBlank(s[S.deskriptor]) ? '<div class="notes">' + esc(s[S.deskriptor]) + '</div>' : '') +
-      (!isBlank(s[S.tweak]) ? '<div class="notes muted small">➜ Tweak: ' + esc(s[S.tweak]) + '</div>' : '') +
-      '</a>';
-    return '<div class="brewbox">' + card + '<div class="brewact">' +
-      aiButton(isBlank(s[S.id]) ? { bean: s[S.biji] } : { brew: s[S.id] }, 'Analisa AI') + '</div></div>';
+      '</a><div class="bfoot">' +
+      (!isBlank(s[S.tweak]) ? '<span class="btweak">➜ Tweak: ' + esc(s[S.tweak]) + '</span>' : '') +
+      aiButton(isBlank(s[S.id]) ? { bean: s[S.biji] } : { brew: s[S.id] }, 'Analisa AI') +
+      '</div><div class="bai"></div></div>';
   }
 
   function aiButton(target, label) {
@@ -904,7 +909,7 @@ if (typeof module !== 'undefined' && module.exports) {
     var h = '<h2>Ringkasan</h2>';
     h += '<div class="cards">' +
       stat('Total seduhan', sum.totalSeduhan, '') +
-      stat('Total biji', sum.totalBiji, '') +
+      stat('Total beans', sum.totalBiji, '') +
       stat('Rata-rata skor', sum.rataSkor === null ? '–' : fmtNum(sum.rataSkor, 2), sum.jumlahBerskor ? 'dari ' + sum.jumlahBerskor + ' seduhan bernilai (skala 10)' : 'belum ada skor') +
       stat('Seduhan terbaik', sum.terbaik ? fmtNum(sum.terbaik[S.skor], 1) : '–',
         sum.terbaik ? beanLabel(sum.terbaikBiji, sum.terbaik[S.biji]) + ' · ' + fmtDate(sum.terbaik[S.tanggal]) : 'belum ada skor') +
@@ -933,7 +938,7 @@ if (typeof module !== 'undefined' && module.exports) {
   function renderSeduhan() {
     var d = state.data, f = state.filters;
     if (!d.seduhan.length) { app.innerHTML = '<h2>Seduhan</h2>' + emptyBox('Belum ada seduhan', 'Tab "Seduhan" masih kosong. Isi data seduhan di Google Sheet lalu muat ulang.'); return; }
-    var beanOpts = '<option value="">Semua biji</option>' + d.biji.map(function (b) {
+    var beanOpts = '<option value="">Semua beans</option>' + d.biji.map(function (b) {
       var id = b[B.id];
       return '<option value="' + esc(id) + '"' + (String(f.biji) === String(id) ? ' selected' : '') + '>' + esc(beanLabel(b)) + '</option>';
     }).join('');
@@ -942,8 +947,8 @@ if (typeof module !== 'undefined' && module.exports) {
       return '<option value="' + esc(x) + '"' + (f.dripper.toLowerCase() === x.toLowerCase() ? ' selected' : '') + '>' + esc(x) + '</option>';
     }).join('');
     var h = '<h2>Daftar Seduhan</h2><div class="panel"><div class="filters">' +
-      '<div><label for="fq">Cari</label><input type="search" id="fq" placeholder="Biji, notes, dripper…" value="' + esc(f.q) + '"></div>' +
-      '<div><label for="fbiji">Biji</label><select id="fbiji">' + beanOpts + '</select></div>' +
+      '<div><label for="fq">Cari</label><input type="search" id="fq" placeholder="Beans, notes, dripper…" value="' + esc(f.q) + '"></div>' +
+      '<div><label for="fbiji">Beans</label><select id="fbiji">' + beanOpts + '</select></div>' +
       '<div><label for="fdrip">Dripper</label><select id="fdrip">' + dripOpts + '</select></div>' +
       '<div><label for="fdari">Dari tanggal</label><input type="date" id="fdari" value="' + esc(f.dari) + '"></div>' +
       '<div><label for="fsampai">Sampai tanggal</label><input type="date" id="fsampai" value="' + esc(f.sampai) + '"></div>' +
@@ -978,10 +983,10 @@ if (typeof module !== 'undefined' && module.exports) {
   /* ---------- halaman: daftar biji ---------- */
   function renderBijiList() {
     var d = state.data;
-    if (!d.biji.length) { app.innerHTML = '<h2>Biji</h2>' + emptyBox('Belum ada biji', 'Tab "Biji" masih kosong. Tambahkan biji di Google Sheet lalu muat ulang.'); return; }
+    if (!d.biji.length) { app.innerHTML = '<h2>Beans</h2>' + emptyBox('Belum ada beans', 'Tab "Biji" masih kosong. Tambahkan beans di Google Sheet lalu muat ulang.'); return; }
     var items = d.biji.map(function (b) { return { b: b, st: beanStats(b, d.seduhan, state.today) }; });
     items.sort(function (x, y) { return (parseDay(y.b[B.roast]) || 0) - (parseDay(x.b[B.roast]) || 0); });
-    var h = '<h2>Biji</h2><div class="list">' + items.map(function (it) {
+    var h = '<h2>Beans</h2><div class="list">' + items.map(function (it) {
       var b = it.b, st = it.st;
       var meta = [b[B.roastery], b[B.negara], b[B.proses]].filter(function (x) { return !isBlank(x); }).join(' · ');
       return '<a class="brew" href="#/biji/' + encodeURIComponent(b[B.id]) + '"><div class="h"><div><div class="t">' + esc(beanLabel(b)) + '</div>' +
@@ -1003,14 +1008,14 @@ if (typeof module !== 'undefined' && module.exports) {
   function renderBijiDetail(id) {
     var d = state.data, bean = state.idx[id];
     if (!bean) {
-      app.innerHTML = '<div class="crumbs"><a href="#/biji">← Semua biji</a></div>' + emptyBox('Biji tidak ditemukan', 'ID Biji "' + id + '" tidak ada di tab "Biji".');
+      app.innerHTML = '<div class="crumbs"><a href="#/biji">← Semua beans</a></div>' + emptyBox('Beans tidak ditemukan', 'ID Biji "' + id + '" tidak ada di tab "Biji".');
       return;
     }
     var st = beanStats(bean, d.seduhan, state.today);
-    var h = '<div class="crumbs"><a href="#/biji">← Semua biji</a></div>' +
+    var h = '<div class="crumbs"><a href="#/biji">← Semua beans</a></div>' +
       '<div class="panel"><div class="beanrow"><div><h2 style="margin:0">' + esc(beanLabel(bean)) + '</h2>' +
       '<div class="muted small">ID ' + esc(id) + (isBlank(bean[B.roastery]) ? '' : ' · ' + esc(bean[B.roastery])) + '</div></div>' + scoreBadge(st.avgScore) + '</div>' +
-      '<div class="row" style="margin-top:10px">' + aiButton({ bean: id }, 'Analisa AI biji ini') +
+      '<div class="row" style="margin-top:10px">' + aiButton({ bean: id }, 'Analisa AI beans ini') +
       (backendOn() ? '' : '<span class="muted small">' + esc(SETUP_HINT) + '</span>') + '</div>' +
       '<div class="cards" style="margin:12px 0">' +
       stat('Umur sejak roasting', st.ageDays === null ? '–' : (st.ageDays < 0 ? '0' : st.ageDays) + ' hr', isBlank(bean[B.roast]) ? 'Tanggal roasting belum diisi' : 'Roasting ' + fmtDate(bean[B.roast])) +
@@ -1029,7 +1034,7 @@ if (typeof module !== 'undefined' && module.exports) {
       '</dl></div>';
 
     if (!st.count) {
-      app.innerHTML = h + emptyBox('Belum ada seduhan untuk biji ini', 'Tambahkan baris di tab "Seduhan" dengan ID Biji "' + id + '".');
+      app.innerHTML = h + emptyBox('Belum ada seduhan untuk beans ini', 'Tambahkan baris di tab "Seduhan" dengan ID Biji "' + id + '".');
       return;
     }
 
@@ -1138,7 +1143,7 @@ if (typeof module !== 'undefined' && module.exports) {
       '<div class="gfrow"><div class="seg" id="gseg" role="group" aria-label="Periode">' + seg + '</div><span class="spacer"></span>' +
       '<button type="button" class="ghost sm" id="greset">Reset</button></div>' +
       '<div class="filters" style="margin:10px 0 0">' +
-      '<div><label for="gbiji">Biji</label><select id="gbiji">' + gfOptions(beans, gf.biji, 'Semua biji') + '</select></div>' +
+      '<div><label for="gbiji">Beans</label><select id="gbiji">' + gfOptions(beans, gf.biji, 'Semua beans') + '</select></div>' +
       '<div><label for="gproses">Proses</label><select id="gproses">' + gfOptions(uniqueValues(d.biji, B.proses), gf.proses, 'Semua proses') + '</select></div>' +
       '<div><label for="gnegara">Negara</label><select id="gnegara">' + gfOptions(uniqueValues(d.biji, B.negara), gf.negara, 'Semua negara') + '</select></div>' +
       '<div><label for="gdripper">Dripper</label><select id="gdripper">' + gfOptions(uniqueValues(d.seduhan, S.dripper), gf.dripper, 'Semua dripper') + '</select></div>' +
@@ -1194,7 +1199,7 @@ if (typeof module !== 'undefined' && module.exports) {
     var nBeans = {}; rows.forEach(function (s) { nBeans[String(s[S.biji])] = 1; });
 
     var h = '<div class="gstats">' +
-      gStat('seduhan', rows.length) + gStat('biji', Object.keys(nBeans).length) +
+      gStat('seduhan', rows.length) + gStat('beans', Object.keys(nBeans).length) +
       gStat('rata-rata skor', avgSc === null ? '–' : fmtNum(avgSc, 1)) +
       gStat('terbaik', best ? fmtNum(best[S.skor], 1) : '–', best ? beanLabel(state.idx[best[S.biji]], best[S.biji]) + ' · ' + fmtDate(best[S.tanggal]) : '') + '</div>';
 
@@ -1208,7 +1213,7 @@ if (typeof module !== 'undefined' && module.exports) {
       '<div class="chartbox sm" id="gtrendbox"><canvas id="gTrend"></canvas></div></div>';
 
     var bs = beanScores(rows, state.idx);
-    h += '<div class="grid2"><div class="panel"><h3>Skor rata-rata per biji</h3>' +
+    h += '<div class="grid2"><div class="panel"><h3>Skor rata-rata per beans</h3>' +
       '<div class="hbarwrap"><div class="chartbox" id="gBeansBox"><canvas id="gBeans"></canvas></div></div>' +
       (bs.length > GF_TOP ? '<p class="tog"><button type="button" class="ghost sm" data-act="allBeans">' + (gf.allBeans ? 'Tampilkan ' + GF_TOP + ' teratas' : 'Tampilkan semua (' + bs.length + ')') + '</button></p>' : '') + '</div>';
 
@@ -1222,7 +1227,7 @@ if (typeof module !== 'undefined' && module.exports) {
 
     var act = activityBuckets(rows);
     h += '<div class="grid2"><div class="panel"><h3>Profil rasa</h3>' +
-      panelNote(gf.biji ? 'Rata-rata atribut (1–5), dibanding semua biji.' : 'Rata-rata atribut SCA (1–5).') +
+      panelNote(gf.biji ? 'Rata-rata atribut (1–5), dibanding semua beans.' : 'Rata-rata atribut SCA (1–5).') +
       '<div class="chartbox sm" id="gRadarBox"><canvas id="gRadar"></canvas></div></div>' +
       '<div class="panel"><h3>Aktivitas seduh</h3>' + panelNote(act.unit === 'week' ? 'Seduhan per pekan.' : 'Seduhan per bulan.') +
       '<div class="chartbox sm"><canvas id="gAct"></canvas></div></div></div>';
@@ -1284,7 +1289,7 @@ if (typeof module !== 'undefined' && module.exports) {
                 var p = pts[it.dataIndex];
                 return dayLabel(p.day) + ' · skor ' + fmtNum(p.y, 1) + (p.dripper ? ' · ' + truncate(p.dripper, 18) : '') + (p.brewId ? ' · #' + p.brewId : '');
               },
-              footer: function (items) { return items[0].datasetIndex === 0 && pts[items[0].dataIndex].beanId ? (isTouch() ? 'Ketuk lagi untuk membuka biji' : 'Klik untuk membuka biji') : ''; }
+              footer: function (items) { return items[0].datasetIndex === 0 && pts[items[0].dataIndex].beanId ? (isTouch() ? 'Ketuk lagi untuk membuka beans' : 'Klik untuk membuka beans') : ''; }
             }
           }
         }
@@ -1324,7 +1329,7 @@ if (typeof module !== 'undefined' && module.exports) {
               title: function (items) { return truncate(shown[items[0].dataIndex].label, 60); },
               label: function (it) { var g = shown[it.dataIndex]; return 'Rata-rata ' + fmtNum(g.avg, 1) + ' · ' + g.n + ' seduhan'; },
               afterLabel: function (it) { var g = shown[it.dataIndex]; return g.n > 1 ? 'Terendah ' + fmtNum(g.min, 1) + ' · tertinggi ' + fmtNum(g.max, 1) : ''; },
-              footer: function () { return o.href ? (isTouch() ? 'Ketuk lagi untuk membuka biji' : 'Klik untuk membuka biji') : ''; }
+              footer: function () { return o.href ? (isTouch() ? 'Ketuk lagi untuk membuka beans' : 'Klik untuk membuka beans') : ''; }
             }
           }
         }
@@ -1339,7 +1344,7 @@ if (typeof module !== 'undefined' && module.exports) {
     if (!base) { emptyChart(canvasId, 'Belum ada penilaian', 'Isi atribut Aroma sampai Balance (1–5) agar profil rasa muncul.'); return; }
     var num = function (arr) { return arr.map(function (v) { return isNum(v) ? Math.round(v * 100) / 100 : 0; }); };
     var sets = [];
-    if (cmp) sets.push({ label: 'Semua biji', data: num(cmp), borderColor: '#b4b4b4', backgroundColor: 'rgba(180,180,180,.15)', pointRadius: 0, borderWidth: 2, borderDash: [5, 4] });
+    if (cmp) sets.push({ label: 'Semua beans', data: num(cmp), borderColor: '#b4b4b4', backgroundColor: 'rgba(180,180,180,.15)', pointRadius: 0, borderWidth: 2, borderDash: [5, 4] });
     sets.push({ label: truncate(label, 24), data: num(base), borderColor: CLR.blue, backgroundColor: 'rgba(0,175,241,.22)', pointBackgroundColor: CLR.blue, pointRadius: 3, borderWidth: 2.5 });
     charts[canvasId] = new Chart(el, {
       type: 'radar', data: { labels: SCA.map(function (a) { return a.label; }), datasets: sets },
@@ -1538,7 +1543,7 @@ if (typeof module !== 'undefined' && module.exports) {
     var defBean = beans.length ? String(beans[0][S.biji]) : (d.biji.length ? String(d.biji[0][B.id]) : '__new');
     var opts = d.biji.map(function (b) {
       return '<option value="' + esc(b[B.id]) + '"' + (String(b[B.id]) === defBean ? ' selected' : '') + '>' + esc(beanLabel(b) + ' (' + b[B.id] + ')') + '</option>';
-    }).join('') + '<option value="__new"' + (defBean === '__new' ? ' selected' : '') + '>➕ Biji baru…</option>';
+    }).join('') + '<option value="__new"' + (defBean === '__new' ? ' selected' : '') + '>➕ Beans baru…</option>';
     var stored = pinStore.get();
 
     h += '<fieldset id="cfs"' + (on ? '' : ' disabled') + '>' +
@@ -1547,8 +1552,8 @@ if (typeof module !== 'undefined' && module.exports) {
       '<div class="muted small" style="margin-top:6px">PIN hanya dikirim ke backend Apps Script milikmu. Jangan centang "ingat" di perangkat bersama.</div></div>' +
       '<div class="panel"><h3>Ceritakan seduhanmu</h3><div class="field"><label for="ctext">Teks bebas</label><textarea id="ctext" placeholder="Contoh: Tadi pagi seduh Kerinci Honey pakai V60, 16 g kopi 256 g air suhu 94, grind 24 klik, 3:00. Rasanya gula merah dan jeruk manis, skor 8."></textarea></div>' +
       '<div class="row" style="margin-top:10px"><button type="button" id="cai" class="ai">✨ Bantu isi dengan AI</button><span class="muted small" id="cstatus" role="status"></span></div></div>' +
-      '<div class="panel"><h3>Biji</h3><div class="field"><label for="cbiji">Pilih biji</label><select id="cbiji">' + opts + '</select></div>' +
-      '<div id="cnew" style="margin-top:12px;display:' + (defBean === '__new' ? 'block' : 'none') + '"><div class="muted small" style="margin-bottom:8px">Biji baru akan ditambahkan ke tab "Biji" dengan ID otomatis.</div>' + formHtml('b', FORM_BIJI) + '</div></div>' +
+      '<div class="panel"><h3>Beans</h3><div class="field"><label for="cbiji">Pilih beans</label><select id="cbiji">' + opts + '</select></div>' +
+      '<div id="cnew" style="margin-top:12px;display:' + (defBean === '__new' ? 'block' : 'none') + '"><div class="muted small" style="margin-bottom:8px">Beans baru akan ditambahkan ke tab "Biji" dengan ID otomatis.</div>' + formHtml('b', FORM_BIJI) + '</div></div>' +
       '<div class="panel"><h3>Seduhan</h3>' + formHtml('s', FORM_SEDUH) + '</div>' +
       '<div class="row"><button type="button" id="csave">Simpan</button><button type="button" id="creset" class="ghost">Kosongkan form</button><span class="muted small" id="csmsg" role="status"></span></div>' +
       '</fieldset>';
@@ -1592,8 +1597,8 @@ if (typeof module !== 'undefined' && module.exports) {
       var pin = readPin('csmsg'); if (!pin) return;
       var sel = $('#cbiji').value, isNew = sel === '__new';
       var seduhan = collect('s'), biji = isNew ? collect('b') : null;
-      if (isNew && !biji['Nama Biji / Lot']) { status('csmsg', 'Nama biji wajib diisi untuk biji baru.', 'err'); return; }
-      if (!isNew && !sel) { status('csmsg', 'Pilih biji dulu.', 'err'); return; }
+      if (isNew && !biji['Nama Biji / Lot']) { status('csmsg', 'Nama beans wajib diisi untuk beans baru.', 'err'); return; }
+      if (!isNew && !sel) { status('csmsg', 'Pilih beans dulu.', 'err'); return; }
       if (!seduhan['Tanggal Seduh']) { status('csmsg', 'Tanggal seduh wajib diisi.', 'err'); return; }
       if (!isNew) seduhan['ID Biji'] = sel;
       var payload = { action: 'save', pin: pin, seduhan: seduhan };
@@ -1601,7 +1606,7 @@ if (typeof module !== 'undefined' && module.exports) {
       var btn = $('#csave'); btn.disabled = true; status('csmsg', 'Menyimpan…');
       api(payload).then(function (j) {
         var ids = j.ids || {};
-        state.flash = 'Tersimpan ✔ Seduhan ' + (ids.seduhan || '') + ' untuk biji ' + (ids.biji || '') + (ids.bijiBaru ? ' (biji baru)' : '') + '.';
+        state.flash = 'Tersimpan ✔ Seduhan ' + (ids.seduhan || '') + ' untuk beans ' + (ids.biji || '') + (ids.bijiBaru ? ' (beans baru)' : '') + '.';
         if (j.data) { var nd = j.data; nd.meta = nd.meta || {}; nd.meta.today = todayLocal(); setData(nd); }
         state.source = 'backend';
         route();
@@ -1651,15 +1656,27 @@ if (typeof module !== 'undefined' && module.exports) {
   /* ---------- panel analisa AI ---------- */
   function closeAnalysis() { var o = document.getElementById('aipanel'); if (o && o.parentNode) o.parentNode.removeChild(o); }
 
-  function openAnalysis(target) {
+  /** host = kartu seduhan (.brew): hasil tampil di dalam kartu itu; tanpa host: panel modal. */
+  function openAnalysis(target, host) {
     closeAnalysis();
-    var title = target.brew ? 'Seduhan ' + target.brew : 'Biji ' + (beanLabel(state.idx[target.bean], target.bean));
+    var title = target.brew ? 'Seduhan ' + target.brew : 'Beans ' + (beanLabel(state.idx[target.bean], target.bean));
+    var slot = host && host.querySelector ? host.querySelector('.bai') : null;
     var ov = document.createElement('div');
-    ov.className = 'ovl'; ov.id = 'aipanel';
-    ov.innerHTML = '<div class="sheet" role="dialog" aria-modal="true" aria-label="Analisa AI"><div class="row"><h3 style="margin:0">✨ Analisa AI</h3><span class="spacer"></span>' +
-      '<button type="button" class="ghost sm" id="aiclose">Tutup</button></div><div class="muted small" style="margin:2px 0 10px">' + esc(title) + '</div><div id="aibody"></div></div>';
-    document.body.appendChild(ov);
-    ov.addEventListener('click', function (e) { if (e.target === ov) closeAnalysis(); });
+    ov.id = 'aipanel';
+    if (slot) {
+      ov.className = 'inl';
+      ov.setAttribute('role', 'region'); ov.setAttribute('aria-label', 'Analisa AI');
+      ov.innerHTML = '<div class="row"><h3 style="margin:0">✨ Analisa AI</h3><span class="spacer"></span>' +
+        '<button type="button" class="ghost sm" id="aiclose">Tutup</button></div><div id="aibody" style="margin-top:8px"></div>';
+      slot.appendChild(ov);
+      if (ov.scrollIntoView) ov.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    } else {
+      ov.className = 'ovl';
+      ov.innerHTML = '<div class="sheet" role="dialog" aria-modal="true" aria-label="Analisa AI"><div class="row"><h3 style="margin:0">✨ Analisa AI</h3><span class="spacer"></span>' +
+        '<button type="button" class="ghost sm" id="aiclose">Tutup</button></div><div class="muted small" style="margin:2px 0 10px">' + esc(title) + '</div><div id="aibody"></div></div>';
+      document.body.appendChild(ov);
+      ov.addEventListener('click', function (e) { if (e.target === ov) closeAnalysis(); });
+    }
     document.getElementById('aiclose').addEventListener('click', closeAnalysis);
     var body = document.getElementById('aibody');
 
@@ -1711,8 +1728,8 @@ if (typeof module !== 'undefined' && module.exports) {
     if (brew) {
       var found = null;
       state.data.seduhan.forEach(function (s) { if (String(s[S.id]) === brew) found = s; });
-      openAnalysis({ brew: brew, bean: found ? found[S.biji] : '' });
-    } else if (bean) openAnalysis({ bean: bean });
+      openAnalysis({ brew: brew, bean: found ? found[S.biji] : '' }, t.closest('.brew'));
+    } else if (bean) openAnalysis({ bean: bean }, t.closest('.brew'));
   });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAnalysis(); });
 
