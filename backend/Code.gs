@@ -246,12 +246,14 @@ function callAnthropic_(payload) {
     payload: JSON.stringify(payload),
     muteHttpExceptions: true
   };
-  var resp = null, code = 0;
+  var resp = null, code = 0, lastErr = '';
   for (var attempt = 0; attempt < 2; attempt++) {
     try {
       resp = UrlFetchApp.fetch(ANTHROPIC_URL, opts);
     } catch (err) {
       resp = null;
+      lastErr = String(err && err.message ? err.message : err).slice(0, 220);
+      try { Logger.log('UrlFetchApp gagal: ' + lastErr); } catch (e3) {}
       if (attempt === 0) { Utilities.sleep(RETRY_DELAY_MS); continue; }
       break;
     }
@@ -259,7 +261,7 @@ function callAnthropic_(payload) {
     if ((code === 429 || code >= 500) && attempt === 0) { Utilities.sleep(RETRY_DELAY_MS); continue; }
     break;
   }
-  if (!resp) fail_('Tidak dapat menghubungi layanan AI (jaringan/timeout). Coba lagi sebentar lagi.', 'AI_JARINGAN');
+  if (!resp) fail_('Tidak dapat menghubungi layanan AI (jaringan/timeout). Coba lagi sebentar lagi.' + (lastErr ? ' Detail: ' + lastErr : ''), 'AI_JARINGAN');
 
   var body = null;
   try { body = JSON.parse(resp.getContentText()); } catch (err) { body = null; }
