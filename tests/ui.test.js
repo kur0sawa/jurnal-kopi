@@ -2,7 +2,8 @@
 // Jalankan: NODE_PATH=<folder node_modules berisi jsdom> node tests/ui.test.js
 const fs = require('fs'), path = require('path'), assert = require('assert');
 const root = path.join(__dirname, '..');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+// index.html di repo sudah berisi BACKEND_URL asli; uji ini mensimulasikan 'belum dipasang' dengan mengosongkannya.
+const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8').replace(/var BACKEND_URL = '[^']*';/, "var BACKEND_URL = '';");
 const data = JSON.parse(fs.readFileSync(path.join(root, 'data.json'), 'utf8'));
 const { JSDOM } = require('jsdom');
 const URL_B = 'https://script.google.com/macros/s/TEST/exec';

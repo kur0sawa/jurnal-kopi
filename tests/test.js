@@ -2,7 +2,8 @@
 // Jalankan: npm i jsdom && node tests/test.js
 const fs = require('fs'), path = require('path'), assert = require('assert');
 const root = path.join(__dirname, '..');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+// index.html di repo sudah berisi BACKEND_URL asli; uji ini mensimulasikan 'belum dipasang' dengan mengosongkannya.
+const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8').replace(/var BACKEND_URL = '[^']*';/, "var BACKEND_URL = '';");
 const data = JSON.parse(fs.readFileSync(path.join(root, 'data.json'), 'utf8'));
 assert(/name="viewport"/.test(html)); assert(!/google\.script/.test(html));
 assert(data.biji.length && data.seduhan.length && data.meta);

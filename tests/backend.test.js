@@ -56,7 +56,7 @@ function makeEnv(opts = {}) {
     LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock: () => {} }) },
     ContentService: { MimeType: { JSON: 'JSON' }, createTextOutput: t => ({ text: t, mime: null, setMimeType(m) { this.mime = m; return this; }, getContent() { return this.text; } }) },
     UrlFetchApp: { fetch: (url, o) => {
-      env.fetches.push({ url, o, body: JSON.parse(o.payload) });
+      env.fetches.push({ url, o, body: o.payload ? JSON.parse(o.payload) : null });
       const next = env.fetchQueue.shift();
       if (!next) throw new Error('tidak ada respons mock');
       if (next instanceof Error) throw next;
@@ -207,15 +207,144 @@ let n = 0; const ok = m => { n++; };
   e = makeEnv({ fetchQueue: [{ code: 529, body: 'overloaded' }, { code: 503, body: 'x' }] });
   r = e.post({ action: 'analyze', pin: '1234', bijiId: 'B01' }); assert.equal(r.ok, false); assert.equal(r.code, 'AI_GANGGUAN'); assert.equal(e.fetches.length, 2); assert(/Layanan AI/.test(r.error));
   e = makeEnv({ fetchQueue: [new Error('Timeout'), new Error('Timeout')] });
-  r = e.post({ action: 'analyze', pin: '1234', bijiId: 'B01' }); assert.equal(r.code, 'AI_JARINGAN'); assert(!/Timeout/.test(r.error));
+  r = e.post({ action: 'analyze', pin: '1234', bijiId: 'B01' }); assert.equal(r.code, 'AI_JARINGAN'); assert(/Detail: Timeout/.test(r.error), 'detail jaringan tetap ditampilkan');
   e = makeEnv({ fetchQueue: [new Error('Timeout'), textResp('pulih')] }); assert.equal(e.post({ action: 'analyze', pin: '1234', bijiId: 'B01' }).ok, true);
   e = makeEnv({ fetchQueue: [{ code: 401, body: { error: { message: 'invalid x-api-key' } } }] });
-  r = e.post({ action: 'parse', pin: '1234', text: 'x' }); assert.equal(r.code, 'AI_KUNCI'); assert.equal(e.fetches.length, 1, '401 tidak diulang');
+  r = e.post({ action: 'parse', pin: '1234', text: 'x' }); assert.equal(r.code, 'AI_KUNCI'); assert.equal(e.fetches.length, 1, '401 tidak diulang'); assert(/ANTHROPIC_API_KEY/.test(r.error) && /invalid x-api-key/.test(r.error));
   e = makeEnv({ fetchQueue: [{ code: 404, body: { error: { message: 'model: x' } } }] }); assert.equal(e.post({ action: 'parse', pin: '1234', text: 'x' }).code, 'AI_MODEL');
   e = makeEnv({ fetchQueue: [{ code: 400, body: { error: { message: 'bad' } } }] }); assert.equal(e.post({ action: 'parse', pin: '1234', text: 'x' }).code, 'AI_DITOLAK');
   e = makeEnv({ fetchQueue: [{ code: 200, body: 'bukan json' }] }); assert.equal(e.post({ action: 'analyze', pin: '1234', bijiId: 'B01' }).ok, false);
   e = makeEnv({ props: { ANTHROPIC_API_KEY: '' } }); r = e.post({ action: 'parse', pin: '1234', text: 'x' }); assert.equal(r.code, 'KUNCI_AI_KOSONG');
   assert(!JSON.stringify(r).includes('sk-')); ok();
+}
+
+// --- provider: pemilihan konfigurasi ---
+const OA = (extra, queue) => makeEnv({ props: Object.assign({ ANTHROPIC_API_KEY: '', AI_API_KEY: 'sk-sumo-TESTKEY' }, extra), fetchQueue: queue });
+const chat = (content, finish) => ({ code: 200, body: { choices: [{ index: 0, finish_reason: finish || 'stop', message: { role: 'assistant', content } }] } });
+const PARSE_JSON = { biji_id: 'B02', seduhan: { tanggal: '2026-10-01', dripper: 'V60', dosis: 16, airTotal: 256, suhu: 94, aroma: 99, rasio: '', skor: 8 } };
+{
+  const cfg = e => JSON.parse(JSON.stringify(e.ctx.aiConfig_()));
+  let c = cfg(makeEnv()); assert.equal(c.provider, 'anthropic'); assert.equal(c.modelParse, 'claude-haiku-4-5'); assert.equal(c.modelAnalyze, 'claude-sonnet-5-5');
+  c = cfg(OA()); assert.equal(c.provider, 'openai-compatible'); assert.equal(c.baseUrl, 'https://ai.sumopod.com/v1'); assert.equal(c.modelParse, 'claude-haiku-4-5'); assert.equal(c.modelAnalyze, 'claude-haiku-4-5');
+  assert.equal(c.jsonMode, true); assert.equal(c.temperature, true);
+  c = cfg(makeEnv({ props: { ANTHROPIC_API_KEY: '', SUMOPOD_API_KEY: 'sk-alias' } })); assert.equal(c.provider, 'openai-compatible'); assert.equal(c.key, 'sk-alias');
+  c = cfg(makeEnv({ props: { AI_API_KEY: 'sk-x' } })); assert.equal(c.provider, 'openai-compatible', 'kedua kunci ada -> openai-compatible');
+  c = cfg(makeEnv({ props: { AI_API_KEY: 'sk-x', AI_PROVIDER: 'anthropic' } })); assert.equal(c.provider, 'anthropic'); assert.equal(c.key, 'sk-test-KEY');
+  c = cfg(OA({ AI_BASE_URL: 'https://gw.example/v1/', MODEL_PARSE: 'gpt-4o-mini', MODEL_ANALYZE: 'gpt-4.1-mini', AI_JSON_MODE: 'OFF', AI_TEMPERATURE: 'off' }));
+  assert.equal(c.baseUrl, 'https://gw.example/v1'); assert.equal(c.modelParse, 'gpt-4o-mini'); assert.equal(c.modelAnalyze, 'gpt-4.1-mini'); assert.equal(c.jsonMode, false); assert.equal(c.temperature, false);
+  c = cfg(makeEnv({ props: { MODEL_PARSE: 'claude-x', MODEL_ANALYZE: 'claude-y' } })); assert.equal(c.provider, 'anthropic'); assert.equal(c.modelParse, 'claude-x'); assert.equal(c.modelAnalyze, 'claude-y');
+  // tanpa kunci apa pun
+  const r = OA({ AI_API_KEY: '' }).post({ action: 'parse', pin: '1234', text: 'x' }); assert.equal(r.code, 'KUNCI_AI_KOSONG'); assert(/AI_API_KEY/.test(r.error)); ok();
+}
+
+// --- openai-compatible: parse (JSON dalam code fence) ---
+{
+  const fenced = 'Berikut hasilnya:\n```json\n' + JSON.stringify(PARSE_JSON) + '\n```\nSemoga membantu.';
+  const e = OA({}, [chat(fenced)]);
+  const r = e.post({ action: 'parse', pin: '1234', text: 'Tadi seduh kerinci honey V60 16g 256g 94C' });
+  assert.equal(r.ok, true, JSON.stringify(r)); assert.equal(r.matchedBijiId, 'B02'); assert.equal(r.draft.seduhan['ID Biji'], 'B02');
+  assert.equal(r.draft.seduhan['Dosis Kopi (g)'], 16); assert.equal(r.draft.seduhan['Aroma (1-5)'], undefined, 'validasi sama'); assert.equal(r.draft.seduhan['Rasio'], undefined); assert.equal(r.draft.biji, undefined);
+  assert.deepEqual(Object.keys(r).sort(), ['draft', 'matchedBijiId', 'ok']);
+  const f = e.fetches[0];
+  assert.equal(f.url, 'https://ai.sumopod.com/v1/chat/completions'); assert.equal(f.o.method, 'post'); assert.equal(f.o.headers.Authorization, 'Bearer sk-sumo-TESTKEY'); assert.equal(f.o.headers['x-api-key'], undefined);
+  assert.equal(f.body.model, 'claude-haiku-4-5'); assert.equal(f.body.temperature, 0); assert.deepEqual(f.body.response_format, { type: 'json_object' });
+  assert.equal(f.body.tools, undefined); assert.equal(f.body.tool_choice, undefined); assert.equal(f.body.output_config, undefined); assert.equal(f.body.system, undefined);
+  assert.equal(f.body.messages[0].role, 'system'); assert(/JSON/.test(f.body.messages[0].content) && /seduhan/.test(f.body.messages[0].content) && !/lewat tool/.test(f.body.messages[0].content));
+  assert.equal(f.body.messages[1].role, 'user'); assert(/B01: Guji Uraga Natural/.test(f.body.messages[1].content));
+  assert.equal(e.seduhan.grid.length, 4, 'parse tidak menulis sheet'); assert(!JSON.stringify(r).includes('sk-sumo'));
+  // JSON polos, teks di sekeliling, <think>, kurung kurawal dalam string
+  const x = e.ctx.extractJson_;
+  assert.deepEqual(JSON.parse(JSON.stringify(x('{"a":1}'))), { a: 1 });
+  assert.deepEqual(JSON.parse(JSON.stringify(x('Ini: {"a":"}{","b":{"c":2}} selesai'))), { a: '}{', b: { c: 2 } });
+  assert.deepEqual(JSON.parse(JSON.stringify(x('<think>{"x":0}</think>\n{"a":3}'))), { a: 3 });
+  assert.deepEqual(JSON.parse(JSON.stringify(x('```\n{"a":4}\n```'))), { a: 4 });
+  assert.equal(x('tidak ada json'), null); assert.equal(x(''), null); assert.equal(x('[1,2]'), null);
+  // opsi menimpa
+  const e2 = OA({ MODEL_PARSE: 'gpt-4o-mini', AI_BASE_URL: 'https://gw.example/v1/', AI_JSON_MODE: 'off', AI_TEMPERATURE: 'off' }, [chat('{"seduhan":{"tanggal":"2026-10-01"}}')]);
+  assert.equal(e2.post({ action: 'parse', pin: '1234', text: 'x' }).ok, true);
+  const f2 = e2.fetches[0]; assert.equal(f2.url, 'https://gw.example/v1/chat/completions'); assert.equal(f2.body.model, 'gpt-4o-mini'); assert.equal(f2.body.response_format, undefined); assert.equal(f2.body.temperature, undefined);
+  // jawaban bukan JSON -> AI_TANPA_HASIL; konten bentuk array
+  assert.equal(OA({}, [chat('maaf saya tidak bisa')]).post({ action: 'parse', pin: '1234', text: 'x' }).code, 'AI_TANPA_HASIL');
+  const arr = OA({}, [{ code: 200, body: { choices: [{ finish_reason: 'stop', message: { content: [{ type: 'text', text: '{"seduhan":{"dosis":15}}' }] } }] } }]).post({ action: 'parse', pin: '1234', text: 'x' });
+  assert.equal(arr.draft.seduhan['Dosis Kopi (g)'], 15); ok();
+}
+
+// --- openai-compatible: analyze (teks biasa) ---
+{
+  const e = OA({}, [chat('## Ringkasan\nSkor naik.')]);
+  const r = e.post({ action: 'analyze', pin: '1234', seduhanId: 'S02', question: 'kenapa?' });
+  assert.equal(r.ok, true); assert(/Ringkasan/.test(r.analysis)); assert.equal(r.model, 'claude-haiku-4-5'); assert.equal(r.totalBrews, 2);
+  const f = e.fetches[0]; assert.equal(f.url, 'https://ai.sumopod.com/v1/chat/completions'); assert.equal(f.body.model, 'claude-haiku-4-5');
+  ['temperature', 'response_format', 'output_config', 'tools', 'tool_choice', 'system'].forEach(k => assert.equal(f.body[k], undefined, k));
+  assert.equal(f.body.messages[0].role, 'system'); assert(/Bahasa Indonesia/.test(f.body.messages[0].content)); assert(/>> TARGET S02/.test(f.body.messages[1].content));
+  // model dari properti, terpotong, ditolak, kosong
+  const e2 = OA({ MODEL_ANALYZE: 'gpt-4.1-mini' }, [chat('abc', 'length')]); const r2 = e2.post({ action: 'analyze', pin: '1234', bijiId: 'B01' });
+  assert.equal(r2.model, 'gpt-4.1-mini'); assert.equal(e2.fetches[0].body.model, 'gpt-4.1-mini'); assert(/terpotong/.test(r2.analysis));
+  assert.equal(OA({}, [chat('', 'content_filter')]).post({ action: 'analyze', pin: '1234', bijiId: 'B01' }).code, 'AI_MENOLAK');
+  assert.equal(OA({}, [chat('')]).post({ action: 'analyze', pin: '1234', bijiId: 'B01' }).code, 'AI_TANPA_HASIL');
+  // anthropic + MODEL_ANALYZE ditimpa: effort tidak dikirim; bawaan: effort dikirim
+  const a = makeEnv({ props: { MODEL_ANALYZE: 'claude-sonnet-4-5' }, fetchQueue: [textResp('ok')] }); a.post({ action: 'analyze', pin: '1234', bijiId: 'B01' });
+  assert.equal(a.fetches[0].body.model, 'claude-sonnet-4-5'); assert.equal(a.fetches[0].body.output_config, undefined);
+  // retry 429 tetap jalan
+  const e3 = OA({}, [{ code: 429, body: { error: { message: 'rate' } } }, chat('berhasil')]); assert.equal(e3.post({ action: 'analyze', pin: '1234', bijiId: 'B01' }).ok, true); assert.equal(e3.fetches.length, 2); assert.equal(e3.sleeps, 1); ok();
+}
+
+// --- openai-compatible: 400 response_format / temperature / max_tokens -> ulang sekali ---
+{
+  let e = OA({}, [{ code: 400, body: { error: { message: "Unsupported parameter: 'response_format' is not supported with this model." } } }, chat('{"seduhan":{"dosis":15}}')]);
+  let r = e.post({ action: 'parse', pin: '1234', text: 'x' });
+  assert.equal(r.ok, true, JSON.stringify(r)); assert.equal(e.fetches.length, 2); assert.equal(e.fetches[0].body.response_format.type, 'json_object'); assert.equal(e.fetches[1].body.response_format, undefined); assert.equal(e.fetches[1].body.temperature, 0);
+  e = OA({}, [{ code: 400, body: { error: { message: "Unsupported value: 'temperature' does not support 0 with this model. Only the default (1) value is supported." } } }, chat('{"seduhan":{"dosis":15}}')]);
+  r = e.post({ action: 'parse', pin: '1234', text: 'x' }); assert.equal(r.ok, true); assert.equal(e.fetches.length, 2); assert.equal(e.fetches[1].body.temperature, undefined); assert.deepEqual(e.fetches[1].body.response_format, { type: 'json_object' });
+  // keduanya berurutan
+  e = OA({}, [{ code: 400, body: { error: { message: 'response_format unsupported' } } }, { code: 400, body: { error: { message: 'temperature unsupported' } } }, chat('{"seduhan":{"dosis":15}}')]);
+  r = e.post({ action: 'parse', pin: '1234', text: 'x' }); assert.equal(r.ok, true); assert.equal(e.fetches.length, 3); assert.equal(e.fetches[2].body.temperature, undefined); assert.equal(e.fetches[2].body.response_format, undefined);
+  // max_tokens -> max_completion_tokens
+  e = OA({}, [{ code: 400, body: { error: { message: "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead." } } }, chat('ok')]);
+  r = e.post({ action: 'analyze', pin: '1234', bijiId: 'B01' }); assert.equal(r.ok, true); assert.equal(e.fetches[1].body.max_tokens, undefined); assert.equal(e.fetches[1].body.max_completion_tokens, 6000);
+  // 400 yang sama berulang: hanya sekali per parameter, lalu galat dengan detail
+  e = OA({}, [{ code: 400, body: { error: { message: 'response_format bad' } } }, { code: 400, body: { error: { message: 'response_format bad' } } }]);
+  r = e.post({ action: 'parse', pin: '1234', text: 'x' }); assert.equal(r.ok, false); assert.equal(r.code, 'AI_DITOLAK'); assert.equal(e.fetches.length, 2); assert(/HTTP 400/.test(r.error) && /response_format bad/.test(r.error));
+  // 400 lain: tidak diulang, detail tampil
+  e = OA({}, [{ code: 400, body: { error: { message: 'Budget has been exceeded' } } }]);
+  r = e.post({ action: 'parse', pin: '1234', text: 'x' }); assert.equal(r.code, 'AI_DITOLAK'); assert.equal(e.fetches.length, 1); assert(/Budget has been exceeded/.test(r.error));
+  // jangan ulang temperature bila tidak dikirim (AI_TEMPERATURE=off)
+  e = OA({ AI_TEMPERATURE: 'off' }, [{ code: 400, body: { error: { message: 'temperature weird' } } }]); r = e.post({ action: 'parse', pin: '1234', text: 'x' }); assert.equal(r.code, 'AI_DITOLAK'); assert.equal(e.fetches.length, 1); ok();
+}
+
+// --- openai-compatible: 401/403/404/5xx/jaringan ---
+{
+  let e = OA({}, [{ code: 401, body: { error: { message: 'Authentication Error, Invalid proxy server token passed. key=sk-sumo-TESTKEY' } } }]);
+  let r = e.post({ action: 'parse', pin: '1234', text: 'x' });
+  assert.equal(r.code, 'AI_KUNCI'); assert.equal(e.fetches.length, 1, '401 tidak diulang'); assert(/AI_API_KEY/.test(r.error) && /Authentication Error/.test(r.error) && /HTTP 401/.test(r.error)); assert(!r.error.includes('sk-sumo-TESTKEY'), 'kunci di-redact'); assert(!/ANTHROPIC/.test(r.error));
+  e = OA({}, [{ code: 403, body: { error: { message: 'key not allowed to access model claude-haiku-4-5' } } }]); r = e.post({ action: 'analyze', pin: '1234', bijiId: 'B01' });
+  assert.equal(r.code, 'AI_KUNCI'); assert(/not allowed to access model/.test(r.error) && /HTTP 403/.test(r.error));
+  e = OA({}, [{ code: 404, body: { error: { message: 'model gpt-9 not found' } } }]); r = e.post({ action: 'analyze', pin: '1234', bijiId: 'B01' });
+  assert.equal(r.code, 'AI_MODEL'); assert(/gpt-9 not found/.test(r.error) && /MODEL_ANALYZE/.test(r.error) && /models/.test(r.error));
+  e = OA({}, [{ code: 401, body: '<html>Unauthorized</html>' }]); r = e.post({ action: 'parse', pin: '1234', text: 'x' }); assert.equal(r.code, 'AI_KUNCI'); assert(/Unauthorized/.test(r.error));
+  e = OA({}, [{ code: 503, body: { error: { message: 'upstream down' } } }, { code: 502, body: 'bad gateway' }]); r = e.post({ action: 'parse', pin: '1234', text: 'x' }); assert.equal(r.code, 'AI_GANGGUAN'); assert.equal(e.fetches.length, 2);
+  e = OA({}, [new Error('Address unavailable: https://ai.sumopod.com/v1/chat/completions'), new Error('Address unavailable')]); r = e.post({ action: 'parse', pin: '1234', text: 'x' }); assert.equal(r.code, 'AI_JARINGAN'); assert(/Detail: Address unavailable/.test(r.error));
+  // 401 sebelum PIN tidak mungkin: PIN tetap dicek lebih dulu
+  e = OA({}, []); assert.equal(e.post({ action: 'models', pin: 'salah' }).code, 'PIN_SALAH'); assert.equal(e.fetches.length, 0); ok();
+}
+
+// --- aksi models ---
+{
+  let e = OA({}, [{ code: 200, body: { object: 'list', data: [{ id: 'gpt-4o-mini' }, { id: 'claude-haiku-4-5' }, { id: 'deepseek-v3' }] } }]);
+  let r = e.post({ action: 'models', pin: '1234' });
+  assert.equal(r.ok, true, JSON.stringify(r)); assert.deepEqual(r.models, ['claude-haiku-4-5', 'deepseek-v3', 'gpt-4o-mini']); assert.equal(r.count, 3); assert.equal(r.provider, 'openai-compatible');
+  assert.deepEqual(r.current, { parse: 'claude-haiku-4-5', analyze: 'claude-haiku-4-5' }); assert(!JSON.stringify(r).includes('sk-sumo'));
+  const f = e.fetches[0]; assert.equal(f.url, 'https://ai.sumopod.com/v1/models'); assert.equal(f.o.method, 'get'); assert.equal(f.o.headers.Authorization, 'Bearer sk-sumo-TESTKEY'); assert.equal(f.body, null);
+  assert.equal(e.cache['ai_calls_' + Math.floor(Date.now() / 3600000)], undefined, 'models tidak memakan jatah parse/analyze');
+  e = OA({ AI_BASE_URL: 'https://gw.example/v1' }, [{ code: 200, body: { data: [] } }]); r = e.post({ action: 'models', pin: '1234' }); assert.equal(e.fetches[0].url, 'https://gw.example/v1/models'); assert.equal(r.count, 0);
+  e = OA({}, [{ code: 401, body: { error: { message: 'bad key' } } }]); r = e.post({ action: 'models', pin: '1234' }); assert.equal(r.code, 'AI_KUNCI'); assert(/bad key/.test(r.error));
+  e = OA({}, [{ code: 404, body: { error: { message: 'no route' } } }]); r = e.post({ action: 'models', pin: '1234' }); assert.equal(r.code, 'AI_MODEL'); assert(/AI_BASE_URL/.test(r.error) && /no route/.test(r.error));
+  assert.equal(OA({ AI_API_KEY: '' }).post({ action: 'models', pin: '1234' }).code, 'KUNCI_AI_KOSONG');
+  // anthropic langsung
+  e = makeEnv({ fetchQueue: [{ code: 200, body: { data: [{ id: 'claude-haiku-4-5' }] } }] }); r = e.post({ action: 'models', pin: '1234' });
+  assert.equal(r.provider, 'anthropic'); assert.deepEqual(r.models, ['claude-haiku-4-5']); assert(/^https:\/\/api\.anthropic\.com\/v1\/models/.test(e.fetches[0].url)); assert.equal(e.fetches[0].o.headers['x-api-key'], 'sk-test-KEY');
+  // izinkan()
+  e = OA({}, [{ code: 401, body: { error: { message: 'x' } } }]); const m = e.ctx.izinkan(); assert(/OK/.test(m)); assert.equal(e.fetches[0].url, 'https://ai.sumopod.com/v1/models'); ok();
 }
 
 // --- rate limit ---
