@@ -142,6 +142,25 @@ fieldset:disabled{opacity:.55}
   .chartbox{height:300px}
   .card,.panel{padding:14px;border-radius:20px}
 }
+
+/* Grafik */
+.gfilters{padding:14px 16px}
+.gfrow{display:flex;gap:8px;align-items:center}
+.seg{display:inline-flex;background:var(--cream);border-radius:999px;padding:3px;gap:2px}
+.seg.wrap{flex-wrap:wrap;border-radius:18px;margin-bottom:10px}
+.seg button{background:transparent;color:var(--ink);border:0;min-height:34px;padding:5px 14px;font-size:13.5px;border-radius:999px}
+.seg button:hover{background:#fff}
+.seg button.on{background:var(--blue);color:#fff;box-shadow:0 2px 6px rgba(0,175,241,.35)}
+.gstats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.gstat{background:var(--card);border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 14px;box-shadow:var(--shadow);min-width:0}
+.gstat b{display:block;font-family:var(--display);font-size:26px;font-weight:800;color:var(--blue-d);line-height:1.1;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.gstat span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+.pnote{margin:-4px 0 8px}
+.dots i{display:inline-block;width:9px;height:9px;border-radius:50%;margin:0 3px 0 8px;vertical-align:baseline}
+.hbarwrap{max-height:470px;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+.hbarwrap .chartbox{height:auto}
+.tog{margin:8px 0 0;text-align:center}
+@media(max-width:520px){.gstats{grid-template-columns:repeat(2,1fr)}.gstat b{font-size:22px}.seg button{padding:5px 11px}}
 </style>
 </head>
 <body>
@@ -357,7 +376,7 @@ var COMPARE_ROWS = [
   { key: 'Rasio', label: 'Rasio', type: 'text' },
   { key: 'Grinder', label: 'Grinder', type: 'text' },
   { key: 'Setting Grind', label: 'Setting grind', type: 'text' },
-  { key: 'Pouring Interval (detik per langkah)', label: 'Pouring interval (detik)', type: 'text' },
+  { key: 'Pouring Interval (detik per langkah)', label: 'Pouring interval', type: 'text' },
   { key: 'Total Brew Time', label: 'Total brew time', type: 'text' },
   { section: 'Penilaian (1-5)' },
   { key: 'Aroma (1-5)', label: 'Aroma', type: 'num' },
@@ -500,6 +519,190 @@ function scoreSeries(brews, idx, beanFilter) {
   };
 }
 
+/* ---------- helper agregasi untuk halaman Grafik (murni, tanpa DOM) ---------- */
+var DAY_MS = 86400000;
+var SERIAL_EPOCH = Date.UTC(1899, 11, 30);
+
+/** "yyyy-MM-dd..." -> nomor hari sejak 1970-01-01 (UTC), atau null. */
+function dayNum(s) { var t = parseDay(s); return t === null ? null : Math.round(t / DAY_MS); }
+/** Nomor hari -> "2 Okt". */
+function dayLabel(n) { var d = new Date(n * DAY_MS); return d.getUTCDate() + ' ' + BULAN[d.getUTCMonth()]; }
+/** Potong teks panjang dengan elipsis. */
+function truncate(str, n) {
+  str = isBlank(str) ? '' : String(str);
+  if (str.length <= n) return str;
+  return str.slice(0, Math.max(1, n - 1)).replace(/\s+$/, '') + '\u2026';
+}
+/** Nomor seri tanggal Google Sheets -> "yyyy-MM-dd". */
+function serialToIso(n) { return new Date(SERIAL_EPOCH + Math.floor(n) * DAY_MS).toISOString().slice(0, 10); }
+/** Sel tanggal yang terbaca sebagai angka (nomor seri Sheets) dijadikan "yyyy-MM-dd". Mengubah data di tempat. */
+function normalizeDates(data) {
+  function fix(rows, keys) {
+    (rows || []).forEach(function (r) {
+      keys.forEach(function (k) { if (isNum(r[k]) && r[k] > 20000 && r[k] < 80000) r[k] = serialToIso(r[k]); });
+    });
+  }
+  if (data) {
+    fix(data.seduhan, [FIELD.seduh.tanggal]);
+    fix(data.biji, [FIELD.biji.roast, FIELD.biji.beli]);
+  }
+  return data;
+}
+
+/** Dimensi pengelompokan skor pada grafik kategori. */
+var DIMS = [
+  { key: 'proses', label: 'Proses' }, { key: 'negara', label: 'Negara' }, { key: 'dripper', label: 'Dripper' },
+  { key: 'grinder', label: 'Grinder' }, { key: 'suhu', label: 'Suhu' }, { key: 'grind', label: 'Setting grind' }
+];
+function dimValue(dim, s, bean) {
+  var v;
+  if (dim === 'proses') return bean && !isBlank(bean[FIELD.biji.proses]) ? String(bean[FIELD.biji.proses]).trim() : '';
+  if (dim === 'negara') return bean && !isBlank(bean[FIELD.biji.negara]) ? String(bean[FIELD.biji.negara]).trim() : '';
+  if (dim === 'dripper') return isBlank(s[FIELD.seduh.dripper]) ? '' : String(s[FIELD.seduh.dripper]).trim();
+  if (dim === 'grinder') return isBlank(s[FIELD.seduh.grinder]) ? '' : String(s[FIELD.seduh.grinder]).trim();
+  if (dim === 'suhu') {
+    v = s[FIELD.seduh.suhu];
+    if (!isNum(v)) return '';
+    var lo = Math.floor(v / 2) * 2;
+    return lo + '\u2013' + (lo + 1) + '\u00b0C';
+  }
+  if (dim === 'grind') {
+    if (isBlank(s[FIELD.seduh.grind])) return '';
+    var g = isBlank(s[FIELD.seduh.grinder]) ? '' : ' \u00b7 ' + String(s[FIELD.seduh.grinder]).trim();
+    return String(s[FIELD.seduh.grind]).trim() + g;
+  }
+  return '';
+}
+
+/** Filter seduhan untuk Grafik. f: {days, biji, proses, negara, dripper}; today = "yyyy-MM-dd". */
+function graphFilter(brews, idx, f, today) {
+  f = f || {};
+  var days = f.days ? Number(f.days) : 0;
+  var cutoff = days > 0 && dayNum(today) !== null ? dayNum(today) - days : null;
+  var low = function (v) { return String(v === null || v === undefined ? '' : v).trim().toLowerCase(); };
+  return (brews || []).filter(function (s) {
+    var bean = idx[s[FIELD.seduh.biji]];
+    if (f.biji && String(s[FIELD.seduh.biji]) !== String(f.biji)) return false;
+    if (f.proses && low(bean && bean[FIELD.biji.proses]) !== low(f.proses)) return false;
+    if (f.negara && low(bean && bean[FIELD.biji.negara]) !== low(f.negara)) return false;
+    if (f.dripper && low(s[FIELD.seduh.dripper]) !== low(f.dripper)) return false;
+    if (cutoff !== null) {
+      var d = dayNum(s[FIELD.seduh.tanggal]);
+      if (d === null || d < cutoff) return false;
+    }
+    return true;
+  });
+}
+
+/**
+ * Rata-rata skor per kelompok. keyFn(s) -> string | {key,label} | ''.
+ * Hasil terurut: rata-rata menurun, lalu jumlah seduhan menurun, lalu label.
+ */
+function groupScores(brews, keyFn) {
+  var map = {}, order = [];
+  (brews || []).forEach(function (s) {
+    var sc = s[FIELD.seduh.skor];
+    if (!isNum(sc)) return;
+    var k = keyFn(s);
+    if (k === null || k === undefined || k === '') return;
+    var key = typeof k === 'object' ? String(k.key) : String(k).trim().toLowerCase();
+    var label = typeof k === 'object' ? k.label : String(k).trim();
+    if (!map[key]) { map[key] = { key: key, label: label, n: 0, sum: 0, min: sc, max: sc }; order.push(key); }
+    var g = map[key];
+    g.n++; g.sum += sc; g.min = Math.min(g.min, sc); g.max = Math.max(g.max, sc);
+  });
+  return order.map(function (k) { var g = map[k]; g.avg = g.sum / g.n; return g; }).sort(function (a, b) {
+    return (b.avg - a.avg) || (b.n - a.n) || String(a.label).localeCompare(String(b.label), 'id');
+  });
+}
+
+function beanScores(brews, idx) {
+  return groupScores(brews, function (s) {
+    var id = s[FIELD.seduh.biji];
+    if (isBlank(id)) return '';
+    return { key: id, label: beanLabel(idx[id], id) };
+  });
+}
+function dimScores(brews, idx, dim) {
+  return groupScores(brews, function (s) { return dimValue(dim, s, idx[s[FIELD.seduh.biji]]); });
+}
+
+/** Rata-rata tiap atribut SCA (null bila tidak ada data sama sekali). */
+function attrAverages(brews) {
+  var vals = SCA.map(function (a) { return avg((brews || []).map(function (s) { return s[a.key]; })); });
+  return vals.some(isNum) ? vals : null;
+}
+
+/** Titik tren skor (urut tanggal). Seduhan di hari yang sama digeser sedikit agar tidak menumpuk. */
+function trendPoints(brews, idx) {
+  var list = sortBrews((brews || []).filter(function (s) {
+    return isNum(s[FIELD.seduh.skor]) && dayNum(s[FIELD.seduh.tanggal]) !== null;
+  }), 'asc');
+  var perDay = {};
+  list.forEach(function (s) { var d = dayNum(s[FIELD.seduh.tanggal]); perDay[d] = (perDay[d] || 0) + 1; });
+  var seen = {};
+  return list.map(function (s) {
+    var d = dayNum(s[FIELD.seduh.tanggal]), n = perDay[d], i = seen[d] || 0;
+    seen[d] = i + 1;
+    var step = Math.min(0.2, 0.8 / Math.max(1, n));
+    var id = s[FIELD.seduh.biji];
+    return {
+      x: d + (i - (n - 1) / 2) * step, y: s[FIELD.seduh.skor], day: d,
+      beanId: isBlank(id) ? '' : String(id), bean: beanLabel(idx[id], id),
+      brewId: isBlank(s[FIELD.seduh.id]) ? '' : String(s[FIELD.seduh.id]),
+      dripper: isBlank(s[FIELD.seduh.dripper]) ? '' : String(s[FIELD.seduh.dripper])
+    };
+  });
+}
+
+/** Rata-rata geser (n titik terakhir) untuk garis tren. */
+function movingAvg(points, n) {
+  return points.map(function (p, i) {
+    var from = Math.max(0, i - n + 1), sum = 0;
+    for (var j = from; j <= i; j++) sum += points[j].y;
+    return { x: p.x, y: sum / (i - from + 1) };
+  });
+}
+
+/** Jumlah seduhan per pekan (rentang <= 100 hari) atau per bulan. */
+function activityBuckets(brews) {
+  var days = (brews || []).map(function (s) { return dayNum(s[FIELD.seduh.tanggal]); }).filter(function (d) { return d !== null; });
+  if (!days.length) return { unit: 'week', buckets: [] };
+  var first = Math.min.apply(null, days), last = Math.max.apply(null, days);
+  var unit = last - first <= 100 ? 'week' : 'month';
+  var scoreByDay = {};
+  (brews || []).forEach(function (s) {
+    var d = dayNum(s[FIELD.seduh.tanggal]);
+    if (d === null) return;
+    (scoreByDay[d] = scoreByDay[d] || []).push(s[FIELD.seduh.skor]);
+  });
+  var out = [], i;
+  if (unit === 'week') {
+    var mon = function (d) { return d - ((new Date(d * DAY_MS).getUTCDay() + 6) % 7); };
+    var m0 = mon(first), m1 = mon(last);
+    for (var m = m0; m <= m1; m += 7) out.push({ start: m, end: m + 6, label: dayLabel(m), count: 0, scores: [] });
+    days.forEach(function (d) { out[Math.floor((mon(d) - m0) / 7)].count++; });
+    out.forEach(function (b) { for (var d = b.start; d <= b.end; d++) if (scoreByDay[d]) b.scores = b.scores.concat(scoreByDay[d]); });
+    out = out.slice(-14);
+  } else {
+    var a = new Date(first * DAY_MS), z = new Date(last * DAY_MS);
+    var y = a.getUTCFullYear(), mo = a.getUTCMonth();
+    while (y < z.getUTCFullYear() || (y === z.getUTCFullYear() && mo <= z.getUTCMonth())) {
+      out.push({ y: y, m: mo, label: BULAN[mo] + ' ' + String(y).slice(2), count: 0, scores: [] });
+      mo++; if (mo > 11) { mo = 0; y++; }
+    }
+    Object.keys(scoreByDay).forEach(function (k) {
+      var dt = new Date(+k * DAY_MS);
+      for (i = 0; i < out.length; i++) {
+        if (out[i].y === dt.getUTCFullYear() && out[i].m === dt.getUTCMonth()) { out[i].count += scoreByDay[k].length; out[i].scores = out[i].scores.concat(scoreByDay[k]); break; }
+      }
+    });
+    out = out.slice(-12);
+  }
+  out.forEach(function (b) { b.avg = avg(b.scores); });
+  return { unit: unit, buckets: out };
+}
+
 /** Definisi form Catat (col = header kolom Sheet). */
 var FORM_BIJI = [
   { col: 'Nama Biji / Lot', label: 'Nama biji / lot', type: 'text', wide: true, req: true },
@@ -533,7 +736,7 @@ var FORM_SEDUH = [
   { col: 'Air Total (g)', label: 'Air total (g)', type: 'num' },
   { col: 'Rasio', label: 'Rasio', type: 'text', ph: 'otomatis dari dosis & air', hint: 'Kosongkan agar dihitung otomatis.' },
   { col: 'Total Brew Time', label: 'Total brew time', type: 'text', ph: 'mis. 2:45' },
-  { col: 'Pouring Interval (detik per langkah)', label: 'Pouring interval (detik per langkah)', type: 'text', wide: true, ph: 'mis. 45s bloom, 40s, 40s' },
+  { col: 'Pouring Interval (detik per langkah)', label: 'Pouring interval (waktu & gram per langkah)', type: 'text', wide: true, ph: 'mis. 0:00 bloom 40g; 0:35 100g; 1:10 100g', hint: 'Format: m:ss [label] gram per langkah, dipisah titik koma.' },
   { section: 'Penilaian (1-5)' },
   { col: 'Aroma (1-5)', label: 'Aroma', type: 'num', min: 1, max: 5, step: 0.5 },
   { col: 'Flavor (1-5)', label: 'Flavor', type: 'num', min: 1, max: 5, step: 0.5 },
@@ -581,7 +784,10 @@ if (typeof module !== 'undefined' && module.exports) {
     buildCompare: buildCompare, beanStats: beanStats, ageText: ageText, radarDatasets: radarDatasets,
     scoreSeries: scoreSeries, sortBrews: sortBrews, indexBiji: indexBiji, uniqueValues: uniqueValues,
     brewLabel: brewLabel, scoreClass: scoreClass, miniMarkdown: miniMarkdown, backendUrl: backendUrl,
-    FORM_BIJI: FORM_BIJI, FORM_SEDUH: FORM_SEDUH
+    FORM_BIJI: FORM_BIJI, FORM_SEDUH: FORM_SEDUH,
+    dayNum: dayNum, dayLabel: dayLabel, truncate: truncate, serialToIso: serialToIso, normalizeDates: normalizeDates,
+    DIMS: DIMS, dimValue: dimValue, graphFilter: graphFilter, groupScores: groupScores, beanScores: beanScores,
+    dimScores: dimScores, attrAverages: attrAverages, trendPoints: trendPoints, movingAvg: movingAvg, activityBuckets: activityBuckets
   };
 }
 </script>
@@ -596,6 +802,7 @@ if (typeof module !== 'undefined' && module.exports) {
     data: null, idx: {}, today: null,
     filters: { q: '', biji: '', dripper: '', dari: '', sampai: '', minSkor: '', sort: 'desc' },
     radarSel: null, // array ID Seduhan/row key
+    gf: { days: '', biji: '', proses: '', negara: '', dripper: '', dim: 'proses', allBeans: false, allDim: false },
     timeBean: '', timeType: 'line',
     compareSel: {}  // per biji: array of row keys terpilih
   };
@@ -699,7 +906,7 @@ if (typeof module !== 'undefined' && module.exports) {
       '<p><a class="btn ghost" href="#/seduhan">Lihat semua seduhan</a></p>'
       : emptyBox('Belum ada seduhan', 'Tambahkan seduhan pertama di tab "Seduhan".');
     app.innerHTML = h;
-    if (chartsAvailable() && d.seduhan.length) drawTime('homeTime', '', 'line');
+    if (chartsAvailable() && d.seduhan.length) drawTrend('homeTime', d.seduhan);
   }
 
   function stat(lbl, val, hint) {
@@ -871,58 +1078,287 @@ if (typeof module !== 'undefined' && module.exports) {
   }
 
   /* ---------- halaman: grafik ---------- */
+  var GF_TOP = 8;
+  var CLR = { hi: '#1fa57f', mid: '#ffb520', lo: '#ff5e5b', na: '#b4b4b4', blue: '#00aff1', blueD: '#0072ab' };
+  function isTouch() { return !!(window.matchMedia && window.matchMedia('(hover: none)').matches); }
+  function narrow() { return window.innerWidth < 520; }
+  function scoreColor(v) { return CLR[scoreClass(v)]; }
+  var lastTap = {};
+  /** Klik di desktop langsung membuka; di layar sentuh ketukan pertama hanya menampilkan tooltip. */
+  function openHref(canvasId, href) {
+    if (!href) return;
+    if (isTouch() && lastTap[canvasId] !== href) { lastTap[canvasId] = href; return; }
+    lastTap[canvasId] = '';
+    location.hash = href;
+  }
+  function hoverPointer(e, els) { if (e && e.native && e.native.target) e.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
+  var valuePlugin = {
+    id: 'kopiValues',
+    afterDatasetsDraw: function (chart) {
+      var ctx = chart.ctx, ds = chart.data.datasets[0], meta = chart.getDatasetMeta(0);
+      if (!ds || !meta) return;
+      ctx.save();
+      ctx.font = '700 11px "DM Sans",system-ui,sans-serif'; ctx.fillStyle = '#192025'; ctx.textBaseline = 'middle';
+      meta.data.forEach(function (bar, i) { ctx.fillText(fmtNum(ds.data[i], 1), bar.x + 6, bar.y); });
+      ctx.restore();
+    }
+  };
+
+  function gfOptions(list, cur, allLabel) {
+    return '<option value="">' + esc(allLabel) + '</option>' + list.map(function (x) {
+      var v = Array.isArray(x) ? x[0] : x, l = Array.isArray(x) ? x[1] : x;
+      return '<option value="' + esc(v) + '"' + (String(cur).toLowerCase() === String(v).toLowerCase() ? ' selected' : '') + '>' + esc(truncate(l, 36)) + '</option>';
+    }).join('');
+  }
+
   function renderGrafik() {
-    var d = state.data;
+    var d = state.data, gf = state.gf;
     if (!d.seduhan.length) { app.innerHTML = '<h2>Grafik</h2>' + emptyBox('Belum ada data seduhan', 'Grafik akan muncul setelah ada seduhan di tab "Seduhan".'); return; }
     if (!chartsAvailable()) { app.innerHTML = '<h2>Grafik</h2>' + chartMissing(); return; }
-    var all = sortBrews(d.seduhan, 'desc');
-    if (!state.radarSel) state.radarSel = all.slice(0, 3).map(brewKey);
-    var keys = all.map(brewKey);
-    state.radarSel = state.radarSel.filter(function (k) { return keys.indexOf(k) !== -1; });
-
-    var beanOpts = '<option value="">Semua biji</option>' + d.biji.map(function (b) {
-      return '<option value="' + esc(b[B.id]) + '"' + (String(state.timeBean) === String(b[B.id]) ? ' selected' : '') + '>' + esc(beanLabel(b)) + '</option>';
+    var beans = d.biji.map(function (b) { return [b[B.id], beanLabel(b)]; }).sort(function (a, b) { return a[1].localeCompare(b[1], 'id'); });
+    var seg = [['30', '30 hari'], ['90', '90 hari'], ['', 'Semua']].map(function (r) {
+      return '<button type="button" class="' + (String(gf.days) === r[0] ? 'on' : '') + '" data-days="' + r[0] + '">' + r[1] + '</button>';
     }).join('');
+    app.innerHTML = '<h2>Grafik</h2><div class="panel gfilters">' +
+      '<div class="gfrow"><div class="seg" id="gseg" role="group" aria-label="Periode">' + seg + '</div><span class="spacer"></span>' +
+      '<button type="button" class="ghost sm" id="greset">Reset</button></div>' +
+      '<div class="filters" style="margin:10px 0 0">' +
+      '<div><label for="gbiji">Biji</label><select id="gbiji">' + gfOptions(beans, gf.biji, 'Semua biji') + '</select></div>' +
+      '<div><label for="gproses">Proses</label><select id="gproses">' + gfOptions(uniqueValues(d.biji, B.proses), gf.proses, 'Semua proses') + '</select></div>' +
+      '<div><label for="gnegara">Negara</label><select id="gnegara">' + gfOptions(uniqueValues(d.biji, B.negara), gf.negara, 'Semua negara') + '</select></div>' +
+      '<div><label for="gdripper">Dripper</label><select id="gdripper">' + gfOptions(uniqueValues(d.seduhan, S.dripper), gf.dripper, 'Semua dripper') + '</select></div>' +
+      '</div></div><div id="gcontent"></div>';
 
-    var h = '<h2>Grafik</h2><div class="panel"><h3>Radar skor SCA</h3>' +
-      '<div class="muted small" style="margin-bottom:8px">Pilih hingga 6 seduhan untuk dibandingkan (skala 1–5).</div><div class="row" id="rpick">' +
-      all.map(function (s) {
-        var k = brewKey(s), on = state.radarSel.indexOf(k) !== -1;
-        var bean = state.idx[s[S.biji]];
-        return '<span class="chip pick ' + (on ? 'on' : 'off') + '" data-k="' + esc(k) + '">' + esc((fmtDate(s[S.tanggal]) || '–') + ' · ' + beanLabel(bean, s[S.biji])) + '</span>';
-      }).join('') + '</div><div class="chartbox" style="margin-top:12px"><canvas id="gRadar"></canvas></div>' +
-      '<div id="rhint" class="muted small"></div></div>' +
-      '<div class="panel"><h3>Skor keseluruhan dari waktu ke waktu</h3><div class="filters" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">' +
-      '<div><label for="tbean">Biji</label><select id="tbean">' + beanOpts + '</select></div>' +
-      '<div><label for="ttype">Jenis grafik</label><select id="ttype"><option value="line"' + (state.timeType === 'line' ? ' selected' : '') + '>Garis</option><option value="bar"' + (state.timeType === 'bar' ? ' selected' : '') + '>Batang</option></select></div></div>' +
-      '<div class="chartbox"><canvas id="gTime"></canvas></div></div>';
-    app.innerHTML = h;
-
-    function drawR() {
-      var chosen = all.filter(function (s) { return state.radarSel.indexOf(brewKey(s)) !== -1; });
-      drawRadar('gRadar', chosen);
-      $('#rhint').textContent = chosen.length ? '' : 'Pilih minimal satu seduhan untuk menampilkan radar.';
-    }
-    $('#rpick').addEventListener('click', function (e) {
-      var t = e.target.closest ? e.target.closest('.pick') : e.target;
-      if (!t || !t.getAttribute('data-k')) return;
-      var k = t.getAttribute('data-k'), i = state.radarSel.indexOf(k);
-      if (i === -1) {
-        if (state.radarSel.length >= 6) { $('#rhint').textContent = 'Maksimal 6 seduhan.'; return; }
-        state.radarSel.push(k); t.className = 'chip pick on';
-      } else { state.radarSel.splice(i, 1); t.className = 'chip pick off'; }
-      drawR();
+    function bind(id, key) { $('#' + id).addEventListener('change', function () { gf[key] = this.value; state.gf.allBeans = false; state.gf.allDim = false; updateGrafik(); }); }
+    bind('gbiji', 'biji'); bind('gproses', 'proses'); bind('gnegara', 'negara'); bind('gdripper', 'dripper');
+    $('#gseg').addEventListener('click', function (e) {
+      var t = e.target.closest ? e.target.closest('button') : null;
+      if (!t) return;
+      gf.days = t.getAttribute('data-days');
+      var bs = this.querySelectorAll('button');
+      for (var i = 0; i < bs.length; i++) bs[i].className = bs[i] === t ? 'on' : '';
+      updateGrafik();
     });
-    function drawT() {
-      state.timeBean = $('#tbean').value; state.timeType = $('#ttype').value;
-      drawTime('gTime', state.timeBean, state.timeType);
+    $('#greset').addEventListener('click', function () {
+      state.gf = gf = { days: '', biji: '', proses: '', negara: '', dripper: '', dim: gf.dim, allBeans: false, allDim: false };
+      renderGrafik();
+    });
+    $('#gcontent').addEventListener('click', function (e) {
+      var t = e.target.closest ? e.target.closest('[data-act]') : null;
+      if (!t) return;
+      var act = t.getAttribute('data-act');
+      if (act === 'dim') gf.dim = t.getAttribute('data-v'), gf.allDim = false;
+      else if (act === 'allBeans') gf.allBeans = !gf.allBeans;
+      else if (act === 'allDim') gf.allDim = !gf.allDim;
+      else if (act === 'reset') { $('#greset').click(); return; }
+      updateGrafik();
+    });
+    updateGrafik();
+  }
+
+  function gStat(lbl, val, title) {
+    return '<div class="gstat"' + (title ? ' title="' + esc(title) + '"' : '') + '><b>' + esc(val) + '</b><span>' + esc(lbl) + '</span></div>';
+  }
+  function panelNote(t) { return '<div class="muted small pnote">' + t + '</div>'; }
+
+  function updateGrafik() {
+    destroyCharts();
+    var gf = state.gf, box = $('#gcontent');
+    if (!box) return;
+    var all = state.data.seduhan;
+    var rows = graphFilter(all, state.idx, gf, state.today);
+    if (!rows.length) {
+      box.innerHTML = emptyBox('Tidak ada seduhan yang cocok', 'Coba periode lebih panjang atau ubah filter.') +
+        '<p style="text-align:center"><button type="button" class="ghost" data-act="reset">Reset filter</button></p>';
+      return;
     }
-    $('#tbean').addEventListener('change', drawT);
-    $('#ttype').addEventListener('change', drawT);
-    drawR(); drawT();
+    var scored = rows.filter(function (s) { return isNum(s[S.skor]); });
+    var avgSc = avg(scored.map(function (s) { return s[S.skor]; }));
+    var best = null;
+    scored.forEach(function (s) { if (!best || s[S.skor] > best[S.skor]) best = s; });
+    var nBeans = {}; rows.forEach(function (s) { nBeans[String(s[S.biji])] = 1; });
+
+    var h = '<div class="gstats">' +
+      gStat('seduhan', rows.length) + gStat('biji', Object.keys(nBeans).length) +
+      gStat('rata-rata skor', avgSc === null ? '–' : fmtNum(avgSc, 1)) +
+      gStat('terbaik', best ? fmtNum(best[S.skor], 1) : '–', best ? beanLabel(state.idx[best[S.biji]], best[S.biji]) + ' · ' + fmtDate(best[S.tanggal]) : '') + '</div>';
+
+    if (!scored.length) {
+      box.innerHTML = h + emptyBox('Belum ada skor', 'Isi kolom "Skor Keseluruhan (1-10)" pada seduhan agar grafik muncul.');
+      return;
+    }
+
+    h += '<div class="panel"><h3>Tren skor</h3>' +
+      panelNote('Satu titik = satu seduhan, garis = rata-rata 5 seduhan terakhir. <span class="dots"><i style="background:' + CLR.hi + '"></i>≥8 <i style="background:' + CLR.mid + '"></i>6–8 <i style="background:' + CLR.lo + '"></i>&lt;6</span>') +
+      '<div class="chartbox sm" id="gtrendbox"><canvas id="gTrend"></canvas></div></div>';
+
+    var bs = beanScores(rows, state.idx);
+    h += '<div class="grid2"><div class="panel"><h3>Skor rata-rata per biji</h3>' +
+      '<div class="hbarwrap"><div class="chartbox" id="gBeansBox"><canvas id="gBeans"></canvas></div></div>' +
+      (bs.length > GF_TOP ? '<p class="tog"><button type="button" class="ghost sm" data-act="allBeans">' + (gf.allBeans ? 'Tampilkan ' + GF_TOP + ' teratas' : 'Tampilkan semua (' + bs.length + ')') + '</button></p>' : '') + '</div>';
+
+    var ds = dimScores(rows, state.idx, gf.dim);
+    h += '<div class="panel"><h3>Skor menurut</h3><div class="seg wrap" role="group">' + DIMS.map(function (x) {
+      return '<button type="button" class="' + (gf.dim === x.key ? 'on' : '') + '" data-act="dim" data-v="' + x.key + '">' + esc(x.label) + '</button>';
+    }).join('') + '</div>' +
+      (ds.length ? '<div class="hbarwrap"><div class="chartbox" id="gDimBox"><canvas id="gDim"></canvas></div></div>' +
+        (ds.length > GF_TOP ? '<p class="tog"><button type="button" class="ghost sm" data-act="allDim">' + (gf.allDim ? 'Tampilkan ' + GF_TOP + ' teratas' : 'Tampilkan semua (' + ds.length + ')') + '</button></p>' : '')
+        : emptyBox('Tidak ada data', 'Kolom ini belum terisi pada seduhan yang terpilih.')) + '</div></div>';
+
+    var act = activityBuckets(rows);
+    h += '<div class="grid2"><div class="panel"><h3>Profil rasa</h3>' +
+      panelNote(gf.biji ? 'Rata-rata atribut (1–5), dibanding semua biji.' : 'Rata-rata atribut SCA (1–5).') +
+      '<div class="chartbox sm" id="gRadarBox"><canvas id="gRadar"></canvas></div></div>' +
+      '<div class="panel"><h3>Aktivitas seduh</h3>' + panelNote(act.unit === 'week' ? 'Seduhan per pekan.' : 'Seduhan per bulan.') +
+      '<div class="chartbox sm"><canvas id="gAct"></canvas></div></div></div>';
+    box.innerHTML = h;
+
+    drawTrend('gTrend', rows);
+    drawHBar('gBeans', bs, { all: gf.allBeans, href: function (g) { return '#/biji/' + encodeURIComponent(g.key); }, hint: 'biji' });
+    if (ds.length) drawHBar('gDim', ds, { all: gf.allDim, color: CLR.blue });
+    // radar: bila satu biji dipilih, bandingkan dengan semua biji (filter lain tetap berlaku)
+    var base = attrAverages(rows), cmp = null, cmpRows = null;
+    if (gf.biji) {
+      cmpRows = graphFilter(all, state.idx, { days: gf.days, proses: gf.proses, negara: gf.negara, dripper: gf.dripper }, state.today);
+      cmp = attrAverages(cmpRows);
+    }
+    drawAvgRadar('gRadar', base, cmp, gf.biji ? beanLabel(state.idx[gf.biji], gf.biji) : 'Rata-rata');
+    drawActivity('gAct', act.buckets);
+  }
+
+  function emptyChart(canvasId, title, text) {
+    var el = document.getElementById(canvasId);
+    if (el && el.parentNode) el.parentNode.innerHTML = emptyBox(title, text);
   }
 
   /* ---------- Chart.js ---------- */
+  function drawTrend(canvasId, brews) {
+    var el = document.getElementById(canvasId);
+    if (!el) return;
+    if (charts[canvasId]) { charts[canvasId].destroy(); delete charts[canvasId]; }
+    var pts = trendPoints(brews, state.idx);
+    if (!pts.length) { emptyChart(canvasId, 'Belum ada skor', 'Isi kolom "Skor Keseluruhan (1-10)" pada seduhan agar grafik muncul.'); return; }
+    var lo = Math.min.apply(null, pts.map(function (p) { return p.y; }));
+    var x0 = pts[0].day, x1 = pts[pts.length - 1].day;
+    var pad = x1 === x0 ? 3 : Math.max(0.6, (x1 - x0) * 0.03);
+    var sets = [{
+      type: 'scatter', label: 'Seduhan', data: pts, pointBackgroundColor: pts.map(function (p) { return scoreColor(p.y); }),
+      pointBorderColor: '#fff', pointBorderWidth: 1.5, pointRadius: pts.length > 60 ? 4 : 6, pointHoverRadius: 8, order: 1
+    }];
+    if (pts.length >= 4) sets.push({
+      type: 'line', label: 'Rata-rata 5 terakhir', data: movingAvg(pts, 5), borderColor: CLR.blue, backgroundColor: CLR.blue,
+      borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 0, tension: 0.3, fill: false, order: 2
+    });
+    charts[canvasId] = new Chart(el, {
+      type: 'scatter', data: { datasets: sets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        onClick: function (e, els) { if (els.length && els[0].datasetIndex === 0) { var p = pts[els[0].index]; openHref(canvasId, p.beanId ? '#/biji/' + encodeURIComponent(p.beanId) : ''); } },
+        onHover: hoverPointer,
+        scales: {
+          x: { type: 'linear', min: x0 - pad, max: x1 + pad, grid: { display: false }, ticks: { maxTicksLimit: narrow() ? 4 : 7, precision: 0, maxRotation: 0, callback: function (v) { return Math.abs(v - Math.round(v)) < 1e-6 ? dayLabel(Math.round(v)) : ''; } } },
+          y: { min: Math.max(0, Math.floor(lo) - 1), max: 10, ticks: { stepSize: 1 } }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: function (items) { var it = items[0]; return it.datasetIndex === 0 ? truncate(pts[it.dataIndex].bean, 40) : 'Rata-rata 5 terakhir'; },
+              label: function (it) {
+                if (it.datasetIndex !== 0) return fmtNum(it.parsed.y, 1);
+                var p = pts[it.dataIndex];
+                return dayLabel(p.day) + ' · skor ' + fmtNum(p.y, 1) + (p.dripper ? ' · ' + truncate(p.dripper, 18) : '') + (p.brewId ? ' · #' + p.brewId : '');
+              },
+              footer: function (items) { return items[0].datasetIndex === 0 && pts[items[0].dataIndex].beanId ? (isTouch() ? 'Ketuk lagi untuk membuka biji' : 'Klik untuk membuka biji') : ''; }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  function drawHBar(canvasId, groups, o) {
+    o = o || {};
+    var el = document.getElementById(canvasId);
+    if (!el) return;
+    if (charts[canvasId]) { charts[canvasId].destroy(); delete charts[canvasId]; }
+    var shown = o.all ? groups : groups.slice(0, GF_TOP);
+    el.parentNode.style.height = Math.max(110, shown.length * 30 + 34) + 'px';
+    var maxLen = narrow() ? 20 : 28;
+    charts[canvasId] = new Chart(el, {
+      type: 'bar',
+      data: {
+        labels: shown.map(function (g) { return truncate(g.label, maxLen); }),
+        datasets: [{ label: 'Skor rata-rata', data: shown.map(function (g) { return Math.round(g.avg * 100) / 100; }),
+          backgroundColor: shown.map(function (g) { return o.color || scoreColor(g.avg); }), borderRadius: 6, barThickness: 18 }]
+      },
+      plugins: [valuePlugin],
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        layout: { padding: { right: 30 } },
+        onClick: function (e, els) { if (els.length && o.href) openHref(canvasId, o.href(shown[els[0].index])); },
+        onHover: o.href ? hoverPointer : undefined,
+        scales: {
+          x: { min: 0, max: 10, ticks: { stepSize: 2 }, grid: { color: '#eef4f6' } },
+          y: { grid: { display: false }, ticks: { autoSkip: false, font: { size: 11.5 } } }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: function (items) { return truncate(shown[items[0].dataIndex].label, 60); },
+              label: function (it) { var g = shown[it.dataIndex]; return 'Rata-rata ' + fmtNum(g.avg, 1) + ' · ' + g.n + ' seduhan'; },
+              afterLabel: function (it) { var g = shown[it.dataIndex]; return g.n > 1 ? 'Terendah ' + fmtNum(g.min, 1) + ' · tertinggi ' + fmtNum(g.max, 1) : ''; },
+              footer: function () { return o.href ? (isTouch() ? 'Ketuk lagi untuk membuka biji' : 'Klik untuk membuka biji') : ''; }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  function drawAvgRadar(canvasId, base, cmp, label) {
+    var el = document.getElementById(canvasId);
+    if (!el) return;
+    if (charts[canvasId]) { charts[canvasId].destroy(); delete charts[canvasId]; }
+    if (!base) { emptyChart(canvasId, 'Belum ada penilaian', 'Isi atribut Aroma sampai Balance (1–5) agar profil rasa muncul.'); return; }
+    var num = function (arr) { return arr.map(function (v) { return isNum(v) ? Math.round(v * 100) / 100 : 0; }); };
+    var sets = [];
+    if (cmp) sets.push({ label: 'Semua biji', data: num(cmp), borderColor: '#b4b4b4', backgroundColor: 'rgba(180,180,180,.15)', pointRadius: 0, borderWidth: 2, borderDash: [5, 4] });
+    sets.push({ label: truncate(label, 24), data: num(base), borderColor: CLR.blue, backgroundColor: 'rgba(0,175,241,.22)', pointBackgroundColor: CLR.blue, pointRadius: 3, borderWidth: 2.5 });
+    charts[canvasId] = new Chart(el, {
+      type: 'radar', data: { labels: SCA.map(function (a) { return a.label; }), datasets: sets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: { r: { min: 0, max: 5, ticks: { stepSize: 1, backdropColor: 'transparent', display: false }, pointLabels: { font: { size: 12, weight: '600' }, color: '#192025' }, grid: { color: '#dce7eb' }, angleLines: { color: '#dce7eb' } } },
+        plugins: {
+          legend: { display: !!cmp, position: 'bottom', labels: { boxWidth: 12, usePointStyle: true, pointStyle: 'circle' } },
+          tooltip: { callbacks: { label: function (it) { return it.dataset.label + ': ' + fmtNum(it.parsed.r, 1); } } }
+        }
+      }
+    });
+  }
+
+  function drawActivity(canvasId, buckets) {
+    var el = document.getElementById(canvasId);
+    if (!el) return;
+    if (charts[canvasId]) { charts[canvasId].destroy(); delete charts[canvasId]; }
+    if (!buckets.length) { emptyChart(canvasId, 'Belum ada tanggal', 'Isi kolom "Tanggal Seduh" agar aktivitas muncul.'); return; }
+    charts[canvasId] = new Chart(el, {
+      type: 'bar',
+      data: { labels: buckets.map(function (b) { return b.label; }), datasets: [{ label: 'Seduhan', data: buckets.map(function (b) { return b.count; }), backgroundColor: CLR.blue, borderRadius: 6, maxBarThickness: 34 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#eef4f6' } }, x: { grid: { display: false }, ticks: { autoSkip: true, maxTicksLimit: narrow() ? 5 : 10, maxRotation: 0 } } },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { title: function (items) { var b = buckets[items[0].dataIndex]; return (b.start !== undefined ? 'Pekan ' : '') + b.label; },
+            label: function (it) { var b = buckets[it.dataIndex]; return b.count + ' seduhan' + (isNum(b.avg) ? ' · rata-rata ' + fmtNum(b.avg, 1) : ''); } } }
+        }
+      }
+    });
+  }
+
   function drawRadar(canvasId, brews) {
     var el = document.getElementById(canvasId);
     if (!el) return;
@@ -1002,6 +1438,7 @@ if (typeof module !== 'undefined' && module.exports) {
     data.biji = data.biji || [];
     data.seduhan = data.seduhan || [];
     data.meta = data.meta || {};
+    normalizeDates(data);
     state.data = data;
     state.idx = indexBiji(data.biji);
     state.today = data.meta.today || new Date().toISOString().slice(0, 10);

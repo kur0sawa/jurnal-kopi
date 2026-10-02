@@ -3,7 +3,7 @@
 Dashboard statis jurnal seduh kopi (biji dan seduhan), di-host lewat GitHub Pages.
 
 - `index.html` – dashboard (tampilan responsif untuk HP). Membaca `data.json` lewat `fetch`; bila `BACKEND_URL` diisi, membaca data dari backend dan mengaktifkan halaman **Catat** (`#/catat`, isi dengan bantuan AI) serta tombol **Analisa AI**.
-- `backend/` – Google Apps Script web app (`Code.gs`, `appsscript.json`) + `SETUP-id.md` (cara pasang). Rahasia (`ANTHROPIC_API_KEY`, `APP_PIN`) hanya di Script Properties.
+- `backend/` – Google Apps Script web app (`Code.gs`, `appsscript.json`) + `SETUP-id.md` (cara pasang). Fitur AI memakai gateway OpenAI-compatible (default Sumopod, `AI_BASE_URL`); `ANTHROPIC_API_KEY` langsung tetap opsi. Rahasia (`AI_API_KEY`, `APP_PIN`) hanya di Script Properties.
 - `data.json` – data biji dan seduhan, bentuknya sama dengan keluaran `getData()` di Apps Script (`biji`, `seduhan`, `meta`).
 
 ## Memperbarui data
@@ -18,7 +18,8 @@ Data awal di repo ini adalah **contoh fiktif** (diberi label `[CONTOH]`). Sumber
 npm i jsdom
 node tests/test.js          # render dasbor + fallback data.json
 node tests/ui.test.js       # Catat, panel Analisa AI, fallback backend (fetch dimock)
-node tests/backend.test.js  # backend/Code.gs dengan mock Apps Script & Anthropic
+node tests/grafik.test.js   # helper agregasi + filter/interaksi halaman Grafik
+node tests/backend.test.js  # backend/Code.gs dengan mock Apps Script & AI
 ```
 
-Grafik memakai Chart.js dari CDN (butuh internet).
+Grafik memakai Chart.js dari CDN (butuh internet). Halaman **Grafik** punya filter (periode, biji, proses, negara, dripper) yang berlaku untuk semua grafik: tren skor, peringkat biji, skor menurut proses/negara/dripper/grinder/suhu/setting grind, profil rasa, dan aktivitas seduh.

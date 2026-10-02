@@ -78,6 +78,13 @@ let n = 0; const ok = m => { n++; };
 // --- konstanta model ---
 { const e = makeEnv(); assert.equal(e.ctx.MODEL_PARSE, 'claude-haiku-4-5'); assert.equal(e.ctx.MODEL_ANALYZE, 'claude-sonnet-5-5'); ok(); }
 
+// --- tanggal berupa nomor seri Sheets (sel berformat angka) tetap menjadi yyyy-MM-dd ---
+{
+  const e = makeEnv(); e.seduhan.grid[2][1] = 46290; e.biji.grid[1][11] = 46285;
+  const d = e.get({ action: 'data' });
+  assert.equal(d.seduhan[1]['Tanggal Seduh'], '2026-09-25'); assert.equal(d.biji[0]['Tanggal Roasting'], '2026-09-20'); ok();
+}
+
 // --- GET data: bentuk sama dengan data.json + kolom terhitung ---
 {
   const e = makeEnv(); const d = e.get({ action: 'data' });

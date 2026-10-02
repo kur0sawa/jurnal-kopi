@@ -106,7 +106,7 @@ const fld = (grp, col) => '[data-grp="' + grp + '"][data-col="' + col + '"]';
   assert.equal(sc.body.biji, undefined); assert.equal(sc.body.seduhan['ID Biji'], 'B02'); assert.strictEqual(sc.body.seduhan['Dosis Kopi (g)'], 16);
   assert.equal(sc.body.seduhan['Deskriptor Rasa / Notes'], 'gula merah, jeruk'); assert.equal(sc.body.seduhan['Setting Grind'], '24 klik'); assert.equal(sc.body.seduhan['Rasio'], undefined);
   assert(/Tersimpan/.test(text(dom)) && /S05/.test(text(dom)), text(dom).slice(0, 300));
-  assert.equal(dom.window.__app.state.data.seduhan.length, 5, 'data diperbarui dari respons save');
+  assert.equal(dom.window.__app.state.data.seduhan.length, data.seduhan.length + 1, 'data diperbarui dari respons save');
 
   // 5) Biji baru: AI menyarankan biji baru, form biji terbuka, simpan mengirim biji
   dom = await render({ backend: URL_B, hash: '#/catat', handler: dataHandler((url, o, body) => {
